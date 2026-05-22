@@ -1,0 +1,13 @@
+server:
+  port: 8084
+
+spring:
+  application:
+    name: tenant-auth
+  profiles:
+    active: dev
+
+# 日志配置
+logging:
+  level:
+    com.tenant: debug

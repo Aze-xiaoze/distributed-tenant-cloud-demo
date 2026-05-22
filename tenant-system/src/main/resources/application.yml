@@ -1,0 +1,13 @@
+server:
+  port: 8085
+
+spring:
+  application:
+    name: tenant-system
+  profiles:
+    active: dev
+
+# 日志配置
+logging:
+  level:
+    com.tenant: debug

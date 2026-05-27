@@ -8,6 +8,7 @@
         <groupId>com.tenant</groupId>
         <artifactId>distributed-tenant-cloud</artifactId>
         <version>1.0.0</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>tenant-auth</artifactId>
@@ -16,16 +17,16 @@
     <description>认证授权服务（登录、注册、JWT）</description>
 
     <dependencies>
+        <!-- 内部模块：核心模块 -->
         <dependency>
             <groupId>com.tenant</groupId>
             <artifactId>tenant-core</artifactId>
-            <version>1.0.0</version>
         </dependency>
 
+        <!-- 内部模块：Feign接口定义 -->
         <dependency>
             <groupId>com.tenant</groupId>
             <artifactId>tenant-api</artifactId>
-            <version>1.0.0</version>
         </dependency>
 
         <!-- Spring Boot Web 启动器 -->
@@ -41,16 +42,16 @@
         </dependency>
 
         <!-- Nacos 注册中心 -->
-                <dependency>
-                    <groupId>com.alibaba.cloud</groupId>
-                    <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
-                </dependency>
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
+        </dependency>
 
-                <!-- Nacos 配置中心 -->
-                <dependency>
-                    <groupId>com.alibaba.cloud</groupId>
-                    <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
-                </dependency>
+        <!-- Nacos 配置中心 -->
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
+        </dependency>
 
         <!-- Bootstrap启动上下文（使bootstrap.yml生效） -->
         <dependency>
@@ -58,7 +59,7 @@
             <artifactId>spring-cloud-starter-bootstrap</artifactId>
         </dependency>
                 
-                <!-- JWT 认证令牌 -->
+        <!-- JWT 认证令牌 -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-api</artifactId>
@@ -123,5 +124,23 @@
             <scope>provided</scope>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <!-- Spring Boot Maven插件：将jar打包为可执行的fat JAR -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>${spring.boot.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>

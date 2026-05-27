@@ -8,6 +8,7 @@
         <groupId>com.tenant</groupId>
         <artifactId>distributed-tenant-cloud</artifactId>
         <version>1.0.0</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>tenant-gateway</artifactId>
@@ -16,10 +17,10 @@
     <description>网关服务（路由、跨域、租户转发）</description>
 
     <dependencies>
+        <!-- 内部模块：公共模块（排除Servlet/MP/MySQL/Validation，网关基于WebFlux） -->
         <dependency>
             <groupId>com.tenant</groupId>
             <artifactId>tenant-common</artifactId>
-            <version>1.0.0</version>
             <exclusions>
                 <!-- 网关基于WebFlux，必须排除Servlet容器的spring-boot-starter-web，否则网关无法启动 -->
                 <exclusion>
@@ -45,16 +46,16 @@
         </dependency>
 
         <!-- Nacos 注册中心 -->
-                <dependency>
-                    <groupId>com.alibaba.cloud</groupId>
-                    <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
-                </dependency>
-                
-                <!-- Nacos 配置中心 -->
-                <dependency>
-                    <groupId>com.alibaba.cloud</groupId>
-                    <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
-                </dependency>
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
+        </dependency>
+
+        <!-- Nacos 配置中心 -->
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
+        </dependency>
 
         <!-- Bootstrap启动上下文（使bootstrap.yml生效） -->
         <dependency>
@@ -62,7 +63,7 @@
             <artifactId>spring-cloud-starter-bootstrap</artifactId>
         </dependency>
                 
-                <!-- Spring Cloud 网关 -->
+        <!-- Spring Cloud 网关 -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-gateway</artifactId>
@@ -119,5 +120,23 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <!-- Spring Boot Maven插件：将jar打包为可执行的fat JAR -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>${spring.boot.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>

@@ -8,6 +8,7 @@
         <groupId>com.tenant</groupId>
         <artifactId>distributed-tenant-cloud</artifactId>
         <version>1.0.0</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>tenant-core</artifactId>
@@ -16,10 +17,10 @@
     <description>核心模块（多租户、权限、Redis、MP配置）</description>
 
     <dependencies>
+        <!-- 内部模块：公共模块 -->
         <dependency>
             <groupId>com.tenant</groupId>
             <artifactId>tenant-common</artifactId>
-            <version>1.0.0</version>
         </dependency>
 
         <!-- Spring Boot Web 启动器 -->
@@ -51,7 +52,7 @@
             <groupId>com.alibaba.cloud</groupId>
             <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
         </dependency>
-        
+
         <!-- Nacos 配置中心 -->
         <dependency>
             <groupId>com.alibaba.cloud</groupId>

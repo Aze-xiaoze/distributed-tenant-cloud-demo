@@ -35,6 +35,24 @@
     <!-- 依赖管理，子模块不用写版本 -->
     <dependencyManagement>
         <dependencies>
+            <!-- ======================== 内部模块版本管理 ======================== -->
+            <dependency>
+                <groupId>com.tenant</groupId>
+                <artifactId>tenant-common</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.tenant</groupId>
+                <artifactId>tenant-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.tenant</groupId>
+                <artifactId>tenant-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <!-- ======================== 第三方依赖版本管理 ======================== -->
             <!-- Spring Boot 核心依赖管理，提供自动配置和起步依赖 -->
             <dependency>
                 <groupId>org.springframework.boot</groupId>

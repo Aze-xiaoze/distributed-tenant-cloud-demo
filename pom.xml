@@ -59,6 +59,12 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+            <!-- Spring Cloud Bootstrap 启动上下文（Spring Cloud 2023.x 默认不再加载bootstrap.yml，需要此依赖） -->
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-starter-bootstrap</artifactId>
+                <version>4.0.4</version>
+            </dependency>
             <!-- MyBatis-Plus ORM框架，增强MyBatis功能，简化数据库操作 -->
             <dependency>
                 <groupId>com.baomidou</groupId>
@@ -86,6 +92,29 @@
                 <groupId>io.jsonwebtoken</groupId>
                 <artifactId>jjwt-jackson</artifactId>
                 <version>${jjwt.version}</version>
+            </dependency>
+            <!-- Nacos Discovery -->
+            <dependency>
+                <groupId>com.alibaba.cloud</groupId>
+                <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
+                <version>${spring.cloud.alibaba.version}</version>
+            </dependency>
+            <!-- Nacos Config -->
+            <dependency>
+                <groupId>com.alibaba.cloud</groupId>
+                <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
+                <version>${spring.cloud.alibaba.version}</version>
+            </dependency>
+            <!-- SkyWalking APM -->
+            <dependency>
+                <groupId>org.apache.skywalking</groupId>
+                <artifactId>apm-toolkit-trace</artifactId>
+                <version>8.12.0</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.skywalking</groupId>
+                <artifactId>apm-toolkit-logback-1.x</artifactId>
+                <version>8.12.0</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

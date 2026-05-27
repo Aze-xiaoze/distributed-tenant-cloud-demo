@@ -1,0 +1,56 @@
+# 通用应用配置（Nacos配置中心会覆盖以下配置）
+spring:
+  application:
+    name: distributed-tenant-cloud
+  # 数据库配置
+  datasource:
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/tenant_cloud?characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=GMT%2B8
+    username: ${MYSQL_USER:root}
+    password: ${MYSQL_PASSWORD:password}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  # Redis配置
+  redis:
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
+    password: ${REDIS_PASSWORD:}
+    database: 0
+    timeout: 5000ms
+    lettuce:
+      pool:
+        max-active: 20
+        max-idle: 10
+        min-idle: 5
+        max-wait: 3000ms
+
+# 日志配置
+logging:
+  level:
+    com.tenant: DEBUG
+    org.springframework: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%traceId] [%thread] %-5level %logger{50} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%traceId] [%thread] %-5level %logger{50} - %msg%n"
+
+# 监控配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: 'health,info,prometheus'  # 生产环境应限制暴露端点
+  endpoint:
+    health:
+      show-details: when-authorized
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+# JWT配置
+jwt:
+  secret: ${JWT_SECRET:defaultSecretKeyForTenantCloudPlatformThatIsAtLeast64BytesLongForHS512}
+  expiration: ${JWT_EXPIRATION:3600000}  # 1小时
+
+# 多租户配置
+tenant:
+  enable: true
+  default-tenant-id: default_tenant

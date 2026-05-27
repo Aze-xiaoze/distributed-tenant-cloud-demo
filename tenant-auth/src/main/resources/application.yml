@@ -6,6 +6,24 @@ spring:
     name: tenant-auth
   profiles:
     active: dev
+  # 数据源配置（本地开发默认值，生产环境由Nacos配置中心下发）
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ${MYSQL_URL:jdbc:mysql://127.0.0.1:3306/tenant_cloud?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai}
+    username: ${MYSQL_USERNAME:root}
+    password: ${MYSQL_PASSWORD:root}
+
+# MyBatis-Plus配置
+mybatis-plus:
+  mapper-locations: classpath*:/mapper/**/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+# JWT配置（与网关、系统服务保持一致）
+jwt:
+  secret: ${JWT_SECRET:defaultSecretKeyForTenantCloudPlatformThatIsAtLeast64BytesLongForHS512}
+  expiration: ${JWT_EXPIRATION:3600000}
 
 # 日志配置
 logging:

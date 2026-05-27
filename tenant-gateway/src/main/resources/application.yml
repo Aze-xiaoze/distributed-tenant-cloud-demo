@@ -6,6 +6,53 @@ spring:
     name: tenant-gateway
   profiles:
     active: dev
+  cloud:
+    gateway:
+      # 路由配置
+      routes:
+        # 认证服务路由
+        - id: tenant-auth
+          uri: lb://tenant-auth
+          predicates:
+            - Path=/auth/**
+          filters:
+            - StripPrefix=0
+
+        # 认证服务-用户内部接口路由（供Feign远程调用）
+        - id: tenant-auth-user
+          uri: lb://tenant-auth
+          predicates:
+            - Path=/user/**
+          filters:
+            - StripPrefix=0
+
+        # 系统管理服务路由
+        - id: tenant-system
+          uri: lb://tenant-system
+          predicates:
+            - Path=/system/**
+          filters:
+            - StripPrefix=1
+
+      # 跨域配置
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowed-origins: "*"
+            allowed-methods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowed-headers: "*"
+            allow-credentials: true
+            max-age: 3600
+
+# JWT配置（与auth服务保持一致）
+jwt:
+  secret: defaultSecretKeyForTenantCloudPlatformThatIsAtLeast64BytesLongForHS512
+  expiration: 3600000
 
 # 日志配置
 logging:

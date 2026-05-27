@@ -1,6 +1,4 @@
-server:
-  port: 8083
-
+# 接口定义模块配置（作为库依赖，不独立运行）
 spring:
   application:
     name: tenant-api

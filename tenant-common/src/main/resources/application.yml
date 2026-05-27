@@ -1,6 +1,4 @@
-server:
-  port: 8081
-
+# 公共模块配置（作为库依赖，不独立运行）
 spring:
   application:
     name: tenant-common

@@ -1,6 +1,4 @@
-server:
-  port: 8082
-
+# 核心模块配置（作为库依赖，不独立运行）
 spring:
   application:
     name: tenant-core

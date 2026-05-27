@@ -1,0 +1,19 @@
+# Nacos配置
+spring:
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_SERVER_ADDR:127.0.0.1:8848}
+        namespace: ${NACOS_NAMESPACE:dev}
+        group: DEFAULT_GROUP
+      config:
+        server-addr: ${NACOS_SERVER_ADDR:127.0.0.1:8848}
+        namespace: ${NACOS_NAMESPACE:dev}
+        group: DEFAULT_GROUP
+        file-extension: yaml
+  application:
+    name: tenant-auth
+
+# 端口配置
+server:
+  port: 8084

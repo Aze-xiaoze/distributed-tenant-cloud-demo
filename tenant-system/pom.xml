@@ -23,7 +23,7 @@
             <artifactId>tenant-core</artifactId>
         </dependency>
 
-        <!-- 内部模块：Feign接口定义 -->
+        <!-- 内部模块：gRPC Protobuf定义+生成代码（原Feign接口定义模块） -->
         <dependency>
             <groupId>com.tenant</groupId>
             <artifactId>tenant-api</artifactId>
@@ -53,13 +53,7 @@
             <artifactId>spring-cloud-starter-bootstrap</artifactId>
         </dependency>
 
-        <!-- Spring Cloud 远程调用 Feign -->
-        <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-openfeign</artifactId>
-        </dependency>
-
-        <!-- Spring Cloud 负载均衡器 -->
+        <!-- Spring Cloud 负载均衡器（gRPC客户端+Nacos服务发现需要） -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-loadbalancer</artifactId>

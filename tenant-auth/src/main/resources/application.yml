@@ -13,6 +13,14 @@ spring:
     username: ${MYSQL_USERNAME:root}
     password: ${MYSQL_PASSWORD:root}
 
+# gRPC服务端配置
+grpc:
+  server:
+    port: 9094  # gRPC端口（与HTTP端口分离，供服务间内部调用）
+    enable-keep-alive: true
+    keep-alive-time: 30s
+    permit-keep-alive-without-calls: true
+
 # MyBatis-Plus配置
 mybatis-plus:
   mapper-locations: classpath*:/mapper/**/*.xml

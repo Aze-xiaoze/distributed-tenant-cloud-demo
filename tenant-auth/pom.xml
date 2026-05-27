@@ -23,7 +23,7 @@
             <artifactId>tenant-core</artifactId>
         </dependency>
 
-        <!-- 内部模块：Feign接口定义 -->
+        <!-- 内部模块：Feign接口定义（已改造为gRPC Protobuf定义+生成代码） -->
         <dependency>
             <groupId>com.tenant</groupId>
             <artifactId>tenant-api</artifactId>

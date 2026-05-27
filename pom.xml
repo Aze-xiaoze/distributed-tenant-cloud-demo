@@ -27,6 +27,9 @@
         <mybatis.plus.version>3.5.5</mybatis.plus.version>
         <mysql.connector.version>8.0.33</mysql.connector.version>
         <jjwt.version>0.11.5</jjwt.version>
+        <grpc.version>1.62.2</grpc.version>
+        <protobuf.version>3.25.3</protobuf.version>
+        <grpc.starter.version>3.1.0.RELEASE</grpc.starter.version>
         <knife4j.version>4.5.0</knife4j.version>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
@@ -123,6 +126,39 @@
                 <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
                 <version>${spring.cloud.alibaba.version}</version>
             </dependency>
+            <!-- gRPC 核心依赖 -->
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-netty-shaded</artifactId>
+                <version>${grpc.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-protobuf</artifactId>
+                <version>${grpc.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-stub</artifactId>
+                <version>${grpc.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-core</artifactId>
+                <version>${grpc.version}</version>
+            </dependency>
+            <!-- Protobuf 运行时 -->
+            <dependency>
+                <groupId>com.google.protobuf</groupId>
+                <artifactId>protobuf-java</artifactId>
+                <version>${protobuf.version}</version>
+            </dependency>
+            <!-- gRPC Spring Boot Starter（服务端+客户端自动配置） -->
+            <dependency>
+                <groupId>net.devh</groupId>
+                <artifactId>grpc-spring-boot-starter</artifactId>
+                <version>${grpc.starter.version}</version>
+            </dependency>
             <!-- SkyWalking APM -->
             <dependency>
                 <groupId>org.apache.skywalking</groupId>
@@ -136,4 +172,16 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
+
+    <!-- 全局构建插件 -->
+    <build>
+        <extensions>
+            <!-- OS检测扩展，供protobuf-maven-plugin使用 -->
+            <extension>
+                <groupId>kr.motd.maven</groupId>
+                <artifactId>os-maven-plugin</artifactId>
+                <version>1.7.1</version>
+            </extension>
+        </extensions>
+    </build>
 </project>

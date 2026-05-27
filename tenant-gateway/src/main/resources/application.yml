@@ -10,19 +10,11 @@ spring:
     gateway:
       # 路由配置
       routes:
-        # 认证服务路由
+        # 认证服务路由（仅HTTP接口，gRPC调用不经过网关）
         - id: tenant-auth
           uri: lb://tenant-auth
           predicates:
             - Path=/auth/**
-          filters:
-            - StripPrefix=0
-
-        # 认证服务-用户内部接口路由（供Feign远程调用）
-        - id: tenant-auth-user
-          uri: lb://tenant-auth
-          predicates:
-            - Path=/user/**
           filters:
             - StripPrefix=0
 

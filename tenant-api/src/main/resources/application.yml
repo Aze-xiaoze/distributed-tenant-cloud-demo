@@ -1,11 +1,2 @@
 # 接口定义模块配置（作为库依赖，不独立运行）
-spring:
-  application:
-    name: tenant-api
-  profiles:
-    active: dev
-
-# 日志配置
-logging:
-  level:
-    com.tenant: debug
+# 仅保留最低限度的spring配置，不注册服务、不连接中间件

@@ -1,4 +1,4 @@
-package main.java.com.tenant.auth.service.impl;
+package com.tenant.auth.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.inner.TenantLineInnerInterceptor;

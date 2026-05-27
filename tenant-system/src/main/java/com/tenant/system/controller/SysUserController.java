@@ -1,7 +1,12 @@
+
 package com.tenant.system.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.tenant.api.grpc.user.GetUserByIdRequest;
+import com.tenant.api.grpc.user.GetUserByUsernameRequest;
+import com.tenant.api.grpc.user.UserGrpcServiceGrpc;
+import com.tenant.api.grpc.user.UserResponse;
 import com.tenant.common.vo.Result;
 import com.tenant.system.entity.SysUser;
 import com.tenant.system.service.SysUserService;
@@ -23,6 +28,9 @@ public class SysUserController {
     @Autowired
     private SysUserService sysUserService;
 
+    @Autowired
+    private UserGrpcServiceGrpc.UserGrpcServiceBlockingStub userGrpcStub;
+
     /**
      * 分页查询用户列表
      * 租户过滤由MyBatis-Plus插件自动处理
@@ -40,33 +48,43 @@ public class SysUserController {
     }
 
     /**
-     * 根据ID获取用户信息
+     * 根据ID获取用户信息（跨服务gRPC调用）
+     * <p>通过gRPC调用tenant-auth服务获取用户信息
      *
      * @param id 用户ID
      * @return 用户信息
      */
-    @GetMapping("/{id}")
-    public Result<SysUser> getById(@PathVariable Long id) {
-        SysUser user = sysUserService.getById(id);
-        if (user != null) {
-            return Result.success(user);
+    @GetMapping("/grpc/{id}")
+    public Result<Object> getGrpcById(@PathVariable Long id) {
+        GetUserByIdRequest request = GetUserByIdRequest.newBuilder()
+                .setUserId(id)
+                .build();
+        UserResponse response = userGrpcStub.getUserById(request);
+        if (response.getCode() == 200 && response.hasData()) {
+            return Result.success(response.getData());
         }
-        return Result.error("用户不存在");
+        return Result.error(response.getMessage());
     }
 
     /**
-     * 根据用户名获取用户信息
+     * 根据用户名获取用户信息（跨服务gRPC调用）
+     * <p>通过gRPC调用tenant-auth服务获取用户信息，
+     * 用于需要跨服务获取认证模块用户数据的场景
      *
      * @param username 用户名
      * @return 用户信息
      */
     @GetMapping("/username/{username}")
     public Result<Object> getByUsername(@PathVariable String username) {
-        SysUser user = sysUserService.getUserByUsername(username);
-        if (user != null) {
-            return Result.success(user);
+        // 通过gRPC调用tenant-auth服务获取用户信息
+        GetUserByUsernameRequest request = GetUserByUsernameRequest.newBuilder()
+                .setUsername(username)
+                .build();
+        UserResponse response = userGrpcStub.getUserByUsername(request);
+        if (response.getCode() == 200 && response.hasData()) {
+            return Result.success(response.getData());
         }
-        return Result.error("用户不存在");
+        return Result.error(response.getMessage());
     }
 
     /**

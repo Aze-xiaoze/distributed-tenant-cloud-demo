@@ -6,6 +6,9 @@ spring:
         server-addr: ${NACOS_SERVER_ADDR:127.0.0.1:8848}
         namespace: ${NACOS_NAMESPACE:dev}
         group: DEFAULT_GROUP
+        # 注册gRPC端口到Nacos元数据，供客户端服务发现
+        metadata:
+          grpc.port: ${grpc.server.port:9094}
       config:
         server-addr: ${NACOS_SERVER_ADDR:127.0.0.1:8848}
         namespace: ${NACOS_NAMESPACE:dev}

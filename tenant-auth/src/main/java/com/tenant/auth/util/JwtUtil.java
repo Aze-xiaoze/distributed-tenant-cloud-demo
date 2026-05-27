@@ -3,7 +3,6 @@ package com.tenant.auth.util;
 import com.tenant.auth.config.properties.JwtProperties;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Component;
 
@@ -111,16 +110,15 @@ public class JwtUtil {
      * @return 令牌
      */
     public String generateToken(String username, String tenantId) {
-        Claims claims = Jwts.claims().setSubject(username);
-        claims.put("tenantId", tenantId);
         Date createdDate = new Date();
         Date expirationDate = new Date(createdDate.getTime() + jwtProperties.getExpiration());
 
         return Jwts.builder()
-                .setClaims(claims)
+                .setSubject(username)
+                .claim("tenantId", tenantId)
                 .setIssuedAt(createdDate)
                 .setExpiration(expirationDate)
-                .signWith(getSigningKey(), SignatureAlgorithm.HS512)
+                .signWith(getSigningKey())
                 .compact();
     }
 

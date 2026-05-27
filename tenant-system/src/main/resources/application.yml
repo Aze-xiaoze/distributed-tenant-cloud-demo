@@ -29,7 +29,8 @@ jwt:
 grpc:
   client:
     tenant-auth:
-      address: 'static://127.0.0.1:9094'  # gRPC服务端地址（本地开发默认值，生产环境通过Nacos服务发现）
+      # 本地开发使用静态地址，生产环境通过Nacos服务发现自动解析
+      # 只需写服务名（与Nacos注册名一致），grpc-spring-boot-starter + Spring Cloud LoadBalancer自动完成服务发现
       negotiationType: plaintext           # 内网通信使用明文传输（生产环境可改用TLS）
       enableKeepAlive: true
       keepAliveTime: 30s

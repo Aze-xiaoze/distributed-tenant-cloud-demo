@@ -64,9 +64,11 @@ public class SecurityConfig {
             // 配置请求授权规则
             .authorizeHttpRequests(auth -> auth
                 // 允许访问登录和注册接口
-                .requestMatchers("/auth/login", "/auth/register", "/auth/validate-token", "/auth/logout").permitAll()
+                .requestMatchers("/auth/login", "/auth/register", "/auth/validate-token", "/auth/logout", "/auth/refresh-token").permitAll()
                 // 允许访问健康检查和监控接口
                 .requestMatchers("/actuator/**").permitAll()
+                // 允许访问Knife4j接口文档相关路径
+                .requestMatchers("/doc.html", "/webjars/**", "/v3/api-docs/**", "/swagger-resources/**", "/favicon.ico").permitAll()
                 // 其他所有请求都需要认证
                 .anyRequest().authenticated()
             )

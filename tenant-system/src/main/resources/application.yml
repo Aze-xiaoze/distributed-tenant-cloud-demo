@@ -12,6 +12,34 @@ spring:
     url: ${MYSQL_URL:jdbc:mysql://127.0.0.1:3306/tenant_cloud?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai}
     username: ${MYSQL_USERNAME:root}
     password: ${MYSQL_PASSWORD:root}
+  # 文件上传配置
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 100MB
+      max-request-size: 100MB
+  # Sentinel 熔断降级配置
+  cloud:
+    sentinel:
+      transport:
+        dashboard: ${SENTINEL_DASHBOARD:127.0.0.1:8079}
+        port: 8719
+      eager: true
+      datasource:
+        flow:
+          nacos:
+            server-addr: ${NACOS_ADDR:127.0.0.1:8848}
+            namespace: ${NACOS_NAMESPACE:}
+            group-id: SENTINEL_GROUP
+            data-id: ${spring.application.name}-flow-rules
+            rule-type: flow
+        degrade:
+          nacos:
+            server-addr: ${NACOS_ADDR:127.0.0.1:8848}
+            namespace: ${NACOS_NAMESPACE:}
+            group-id: SENTINEL_GROUP
+            data-id: ${spring.application.name}-degrade-rules
+            rule-type: degrade
 
 # MyBatis-Plus配置
 mybatis-plus:
@@ -23,7 +51,7 @@ mybatis-plus:
 # JWT配置（与认证服务、网关保持一致）
 jwt:
   secret: ${JWT_SECRET:defaultSecretKeyForTenantCloudPlatformThatIsAtLeast64BytesLongForHS512}
-  expiration: ${JWT_EXPIRATION:3600000}
+  expiration: ${JWT_EXPIRATION:1800000}
 
 # gRPC客户端配置
 grpc:
@@ -40,3 +68,65 @@ grpc:
 logging:
   level:
     com.tenant: debug
+
+# MinIO 文件存储配置
+minio:
+  url: ${MINIO_URL:}
+  user: ${MINIO_USER:admin}
+  password: ${MINIO_PASSWORD:admin123456}
+  default-bucket: tenant-default
+  max-file-size: 104857600
+
+# XXL-Job 分布式任务调度配置（未配置时不激活）
+xxl:
+  job:
+    admin:
+      addresses: ${XXL_JOB_ADMIN_ADDRESSES:}
+    accessToken: ${XXL_JOB_ACCESS_TOKEN:}
+    executor:
+      appname: tenant-system-executor
+      address:
+      ip:
+      port: 9999
+      logpath: ./logs/xxl-job/jobhandler
+      logretentiondays: 30
+
+# Knife4j API文档配置
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+  group-configs:
+    - group: 系统管理
+      packages-to-scan: com.tenant.system.controller
+
+# Knife4j增强配置
+knife4j:
+  enable: true
+  setting:
+    language: zh_cn
+    enable-version: true
+  basic:
+    enable: false
+
+# Actuator 健康检查与监控端点配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when-authorized
+      probes:
+        enabled: true
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}

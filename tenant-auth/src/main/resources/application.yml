@@ -12,6 +12,44 @@ spring:
     url: ${MYSQL_URL:jdbc:mysql://127.0.0.1:3306/tenant_cloud?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai}
     username: ${MYSQL_USERNAME:root}
     password: ${MYSQL_PASSWORD:root}
+  # Flyway 数据库版本管理配置
+  flyway:
+    enabled: true
+    # 迁移脚本路径
+    locations: classpath:db/migration
+    # baseline版本号（首次在已有数据库上执行Flyway时使用）
+    baseline-version: '0'
+    baseline-on-migrate: true
+    # 校验迁移脚本的校验和，防止脚本被篡改
+    validate-on-migrate: true
+    # 清理数据库（生产环境必须为false）
+    clean-disabled: true
+    # 编码
+    encoding: UTF-8
+    # 表名前缀
+    table: flyway_schema_history
+  # Sentinel 熔断降级配置
+  cloud:
+    sentinel:
+      transport:
+        dashboard: ${SENTINEL_DASHBOARD:127.0.0.1:8079}
+        port: 8719
+      eager: true
+      datasource:
+        flow:
+          nacos:
+            server-addr: ${NACOS_ADDR:127.0.0.1:8848}
+            namespace: ${NACOS_NAMESPACE:}
+            group-id: SENTINEL_GROUP
+            data-id: ${spring.application.name}-flow-rules
+            rule-type: flow
+        degrade:
+          nacos:
+            server-addr: ${NACOS_ADDR:127.0.0.1:8848}
+            namespace: ${NACOS_NAMESPACE:}
+            group-id: SENTINEL_GROUP
+            data-id: ${spring.application.name}-degrade-rules
+            rule-type: degrade
 
 # gRPC服务端配置
 grpc:
@@ -31,9 +69,50 @@ mybatis-plus:
 # JWT配置（与网关、系统服务保持一致）
 jwt:
   secret: ${JWT_SECRET:defaultSecretKeyForTenantCloudPlatformThatIsAtLeast64BytesLongForHS512}
-  expiration: ${JWT_EXPIRATION:3600000}
+  expiration: ${JWT_EXPIRATION:1800000}
+  refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000}
 
 # 日志配置
 logging:
   level:
     com.tenant: debug
+
+# Knife4j API文档配置
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+  group-configs:
+    - group: 认证服务
+      packages-to-scan: com.tenant.auth.controller
+
+# Knife4j增强配置
+knife4j:
+  enable: true
+  setting:
+    language: zh_cn
+    enable-version: true
+  basic:
+    enable: false
+
+# Actuator 健康检查与监控端点配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when-authorized
+      probes:
+        enabled: true
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}

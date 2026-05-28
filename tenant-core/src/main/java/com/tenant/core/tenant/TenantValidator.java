@@ -153,9 +153,16 @@ public class TenantValidator {
 
     /**
      * 清除租户过期缓存（租户续费后调用）
+     *
+     * @param tenantId 租户ID
      */
     public void clearExpiredCache(String tenantId) {
+        if (tenantId == null || tenantId.isEmpty()) {
+            log.warn("清除租户过期缓存失败：tenantId为空");
+            return;
+        }
         redisTemplate.delete(TENANT_EXPIRED_PREFIX + tenantId);
+        log.info("已清除租户过期缓存: tenantId={}", tenantId);
     }
 
     /**

@@ -107,6 +107,12 @@
             <artifactId>apm-toolkit-logback-1.x</artifactId>
         </dependency>
         
+        <!-- MinIO 对象存储 -->
+        <dependency>
+            <groupId>io.minio</groupId>
+            <artifactId>minio</artifactId>
+        </dependency>
+        
         <!-- Spring Boot 测试启动器 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

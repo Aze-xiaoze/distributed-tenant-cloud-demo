@@ -71,7 +71,12 @@ public class AuthGatewayFilter implements GlobalFilter, Ordered {
             "/auth/validate-token",
             "/auth/refresh-token",
             "/auth/logout",
-            "/actuator"
+            "/actuator",
+            "/doc.html",
+            "/webjars/",
+            "/v3/api-docs",
+            "/swagger-resources",
+            "/favicon.ico"
     );
 
     @Value("${jwt.secret:defaultSecretKeyForTenantCloudPlatformThatIsAtLeast64BytesLongForHS512}")

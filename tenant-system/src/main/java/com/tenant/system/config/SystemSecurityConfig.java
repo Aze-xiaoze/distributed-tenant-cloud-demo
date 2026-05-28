@@ -39,6 +39,8 @@ public class SystemSecurityConfig {
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/actuator/**").permitAll()
+                // 允许访问Knife4j接口文档相关路径
+                .requestMatchers("/doc.html", "/webjars/**", "/v3/api-docs/**", "/swagger-resources/**", "/favicon.ico").permitAll()
                 .anyRequest().authenticated()
             )
             .addFilterBefore(systemJwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

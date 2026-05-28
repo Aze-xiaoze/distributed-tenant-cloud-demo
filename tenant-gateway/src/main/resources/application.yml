@@ -48,6 +48,21 @@ spring:
                 redis-rate-limiter.requestedTokens: 1
                 key-resolver: "#{@tenantIpKeyResolver}"
 
+        # 文件服务路由（文件上传/下载走独立路由，便于独立限流和监控）
+        - id: tenant-file
+          uri: lb://tenant-system
+          predicates:
+            - Path=/file/**
+          filters:
+            - StripPrefix=0
+            # 文件服务限流：每租户每IP 5次/秒（文件操作较重）
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 5
+                redis-rate-limiter.burstCapacity: 10
+                redis-rate-limiter.requestedTokens: 1
+                key-resolver: "#{@tenantIpKeyResolver}"
+
       # 跨域配置（安全收窄：生产环境禁止allowed-origins为*配合allow-credentials:true）
       globalcors:
         cors-configurations:
@@ -70,10 +85,56 @@ spring:
             allow-credentials: true
             max-age: 3600
 
+    # Sentinel 熔断降级配置
+    sentinel:
+      transport:
+        dashboard: ${SENTINEL_DASHBOARD:127.0.0.1:8079}
+        port: 8719
+      eager: true
+      # 持久化到Nacos（生产环境推荐，避免重启丢失规则）
+      datasource:
+        flow:
+          nacos:
+            server-addr: ${NACOS_ADDR:127.0.0.1:8848}
+            namespace: ${NACOS_NAMESPACE:}
+            group-id: SENTINEL_GROUP
+            data-id: ${spring.application.name}-flow-rules
+            rule-type: gw-flow
+        degrade:
+          nacos:
+            server-addr: ${NACOS_ADDR:127.0.0.1:8848}
+            namespace: ${NACOS_NAMESPACE:}
+            group-id: SENTINEL_GROUP
+            data-id: ${spring.application.name}-degrade-rules
+            rule-type: degrade
+
 # JWT配置（与auth服务保持一致）
 jwt:
   secret: defaultSecretKeyForTenantCloudPlatformThatIsAtLeast64BytesLongForHS512
   expiration: 1800000
+
+# Actuator 健康检查与监控端点配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,gateway,metrics
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when-authorized
+      probes:
+        enabled: true
+    gateway:
+      enabled: true
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
 
 # 日志配置
 logging:

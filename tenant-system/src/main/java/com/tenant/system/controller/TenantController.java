@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.tenant.common.vo.Result;
 import com.tenant.system.entity.Tenant;
 import com.tenant.system.service.TenantService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -61,7 +62,7 @@ public class TenantController {
      * 新增租户
      */
     @PostMapping
-    public Result<String> add(@RequestBody Tenant tenant) {
+    public Result<String> add(@Valid @RequestBody Tenant tenant) {
         boolean success = tenantService.save(tenant);
         return success ? Result.success("新增成功") : Result.error("新增失败");
     }
@@ -70,7 +71,7 @@ public class TenantController {
      * 更新租户
      */
     @PutMapping
-    public Result<String> update(@RequestBody Tenant tenant) {
+    public Result<String> update(@Valid @RequestBody Tenant tenant) {
         boolean success = tenantService.updateById(tenant);
         return success ? Result.success("更新成功") : Result.error("更新失败");
     }

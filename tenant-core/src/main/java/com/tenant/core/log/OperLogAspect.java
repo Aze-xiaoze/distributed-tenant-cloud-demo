@@ -48,19 +48,19 @@ public class OperLogAspect {
     /**
      * 请求参数最大长度（超过截断，防止TEXT字段溢出）
      */
-    private static final int MAX_PARAM_LENGTH = 4096;
+    private static final int MAX_PARAM_LENGTH = com.tenant.common.constant.TenantConstants.MAX_LOG_PARAM_LENGTH;
 
     /**
      * 响应结果最大长度
      */
-    private static final int MAX_RESULT_LENGTH = 4096;
+    private static final int MAX_RESULT_LENGTH = com.tenant.common.constant.TenantConstants.MAX_LOG_RESULT_LENGTH;
 
-    private final OperLogMapper operLogMapper;
+    private final OperLogAsyncService operLogAsyncService;
 
     private final ObjectMapper objectMapper;
 
-    public OperLogAspect(OperLogMapper operLogMapper, ObjectMapper objectMapper) {
-        this.operLogMapper = operLogMapper;
+    public OperLogAspect(OperLogAsyncService operLogAsyncService, ObjectMapper objectMapper) {
+        this.operLogAsyncService = operLogAsyncService;
         this.objectMapper = objectMapper;
     }
 
@@ -250,14 +250,10 @@ public class OperLogAspect {
 
     /**
      * 异步保存日志
-     * <p>使用独立线程保存，日志写入失败不影响业务流程
+     * <p>委托给 {@link OperLogAsyncService} 在独立线程池中执行，
+     * 日志写入失败不影响业务流程
      */
     private void saveLogAsync(OperLogEntity logEntity) {
-        try {
-            operLogMapper.insert(logEntity);
-        } catch (Exception e) {
-            log.error("操作日志保存失败：title={}, operator={}, error={}",
-                    logEntity.getTitle(), logEntity.getOperator(), e.getMessage());
-        }
+        operLogAsyncService.saveLogAsync(logEntity);
     }
 }

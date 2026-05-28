@@ -82,6 +82,22 @@
             <artifactId>apm-toolkit-logback-1.x</artifactId>
         </dependency>
         
+        <!-- JWT 认证令牌解析（供网关和下游服务统一使用） -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
         <!-- Spring Boot 测试启动器 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

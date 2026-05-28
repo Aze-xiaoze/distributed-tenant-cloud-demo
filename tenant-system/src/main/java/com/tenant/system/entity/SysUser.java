@@ -2,6 +2,7 @@ package com.tenant.system.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
 import com.tenant.core.tenant.TenantEntity;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -24,6 +25,7 @@ public class SysUser implements TenantEntity, Serializable {
     @TableId(type = IdType.AUTO)
     private Long id;
 
+    @NotBlank(message = "用户名不能为空")
     private String username;
 
     /**

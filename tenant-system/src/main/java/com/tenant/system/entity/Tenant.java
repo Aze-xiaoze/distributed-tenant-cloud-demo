@@ -1,6 +1,9 @@
 package com.tenant.system.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -26,11 +29,13 @@ public class Tenant implements Serializable {
     /**
      * 租户编码（唯一标识）
      */
+    @NotBlank(message = "租户编码不能为空")
     private String tenantCode;
 
     /**
      * 租户名称
      */
+    @NotBlank(message = "租户名称不能为空")
     private String tenantName;
 
     /**
@@ -46,6 +51,7 @@ public class Tenant implements Serializable {
     /**
      * 联系邮箱
      */
+    @Email(message = "联系邮箱格式不正确")
     private String contactEmail;
 
     /**
@@ -61,6 +67,7 @@ public class Tenant implements Serializable {
     /**
      * 最大用户数
      */
+    @NotNull(message = "最大用户数不能为空")
     private Integer maxUsers;
 
     /**

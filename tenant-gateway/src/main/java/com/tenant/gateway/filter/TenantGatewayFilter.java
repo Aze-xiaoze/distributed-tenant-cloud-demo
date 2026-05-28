@@ -27,13 +27,13 @@ public class TenantGatewayFilter implements GlobalFilter, Ordered {
 
     private static final Logger log = LoggerFactory.getLogger(TenantGatewayFilter.class);
 
-    private static final String TENANT_HEADER_NAME = "X-Tenant-ID";
+    private static final String TENANT_HEADER_NAME = com.tenant.common.constant.TenantConstants.X_TENANT_ID_HEADER;
 
     /**
      * 租户ID来源验证标记头（与{@link AuthGatewayFilter}中定义一致）
      */
-    private static final String TENANT_VERIFIED_HEADER = "X-Tenant-Verified";
-    private static final String DEFAULT_TENANT_ID = "default_tenant";
+    private static final String TENANT_VERIFIED_HEADER = com.tenant.common.constant.TenantConstants.X_TENANT_VERIFIED_HEADER;
+    private static final String DEFAULT_TENANT_ID = com.tenant.common.constant.TenantConstants.DEFAULT_TENANT_ID;
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {

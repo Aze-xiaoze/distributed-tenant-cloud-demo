@@ -1,7 +1,7 @@
 package com.tenant.gateway.filter;
 
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
+import com.tenant.common.security.JwtTokenClaims;
+import com.tenant.common.security.JwtTokenParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -17,8 +17,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
-import javax.crypto.SecretKey;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 /**
@@ -45,21 +43,21 @@ public class AuthGatewayFilter implements GlobalFilter, Ordered {
 
     private static final Logger log = LoggerFactory.getLogger(AuthGatewayFilter.class);
 
-    private static final String BEARER_PREFIX = "Bearer ";
-    private static final String USER_HEADER = "X-User-Name";
-    private static final String TENANT_HEADER = "X-Tenant-ID";
+    private static final String BEARER_PREFIX = com.tenant.common.constant.TenantConstants.BEARER_PREFIX;
+    private static final String USER_HEADER = com.tenant.common.constant.TenantConstants.X_USER_NAME_HEADER;
+    private static final String TENANT_HEADER = com.tenant.common.constant.TenantConstants.X_TENANT_ID_HEADER;
 
     /**
      * Token黑名单Key前缀（与TokenBlacklistService中定义一致）
      */
-    private static final String TOKEN_BLACKLIST_PREFIX = "token:blacklist:jti:";
+    private static final String TOKEN_BLACKLIST_PREFIX = com.tenant.common.constant.TenantConstants.TOKEN_BLACKLIST_PREFIX;
 
     /**
      * 租户ID来源验证标记头，下游服务据此判断租户ID是否经过JWT签名验证
      * <p>值为"true"表示租户ID来源于JWT Claims（可信），下游服务可安全使用
      * <p>值不存在表示租户ID来源于客户端请求头（不可信，仅限白名单路径使用）
      */
-    private static final String TENANT_VERIFIED_HEADER = "X-Tenant-Verified";
+    private static final String TENANT_VERIFIED_HEADER = com.tenant.common.constant.TenantConstants.X_TENANT_VERIFIED_HEADER;
 
     /**
      * 不需要认证的路径列表
@@ -106,63 +104,53 @@ public class AuthGatewayFilter implements GlobalFilter, Ordered {
 
         String token = authHeader.substring(BEARER_PREFIX.length());
 
-        try {
-            // 解析JWT令牌
-            SecretKey key = io.jsonwebtoken.security.Keys.hmacShaKeyFor(
-                    secret.getBytes(StandardCharsets.UTF_8));
-            Claims claims = Jwts.parserBuilder()
-                    .setSigningKey(key)
-                    .build()
-                    .parseClaimsJws(token)
-                    .getBody();
-
-            String username = claims.getSubject();
-            String tenantId = claims.get("tenantId", String.class);
-            String jti = claims.getId();
-            String tokenType = claims.get("tokenType", String.class);
-            String verifiedTenantId = tenantId != null ? tenantId : "default_tenant";
-
-            // 安全检查：禁止RefreshToken被当作AccessToken使用
-            // RefreshToken仅能用于/auth/refresh-token接口，不能用于其他API鉴权
-            if ("refresh".equals(tokenType)) {
-                log.warn("RefreshToken不能用于API鉴权：jti={}, username={}", jti, username);
-                return unauthorizedResponse(exchange);
-            }
-
-            // 从JWT中提取权限列表，透传给下游服务（供@RequiresPermission切面使用）
-            @SuppressWarnings("unchecked")
-            List<String> permissions = claims.get("permissions", List.class);
-            String permissionsStr = (permissions != null && !permissions.isEmpty())
-                    ? String.join(",", permissions) : "";
-
-            // 检查Token是否已被吊销（黑名单检查）
-            if (jti != null && Boolean.TRUE.equals(redisTemplate.hasKey(TOKEN_BLACKLIST_PREFIX + jti))) {
-                log.warn("Token已被吊销：jti={}, username={}", jti, username);
-                return unauthorizedResponse(exchange);
-            }
-
-            log.debug("JWT认证通过：username={}, tenantId={}", username, verifiedTenantId);
-
-            // 关键安全修复：从JWT Claims中提取租户ID，强制覆盖客户端可能伪造的X-Tenant-ID
-            // 使用headers.set()确保替换而非追加，防止客户端伪造的租户ID残留
-            ServerHttpRequest mutatedRequest = request.mutate()
-                    .headers(headers -> {
-                        headers.set(USER_HEADER, username);
-                        headers.set(TENANT_HEADER, verifiedTenantId);
-                        headers.set(TENANT_VERIFIED_HEADER, "true");
-                        // 透传权限标识列表（逗号分隔），供下游@RequiresPermission切面使用
-                        if (!permissionsStr.isEmpty()) {
-                            headers.set("X-User-Permissions", permissionsStr);
-                        }
-                    })
-                    .build();
-
-            return chain.filter(exchange.mutate().request(mutatedRequest).build());
-
-        } catch (Exception e) {
-            log.warn("JWT认证失败：path={}, error={}", path, e.getMessage());
+        JwtTokenParser tokenParser = new JwtTokenParser(secret);
+        JwtTokenClaims claims = tokenParser.parseToken(token);
+        if (claims == null) {
+            log.warn("JWT解析失败，path={}", path);
             return unauthorizedResponse(exchange);
         }
+
+        String username = claims.getUsername();
+        String tenantId = claims.getTenantId();
+        String jti = claims.getJti();
+        String verifiedTenantId = tenantId != null ? tenantId : "default_tenant";
+
+        // 安全检查：禁止RefreshToken被当作AccessToken使用
+        // RefreshToken仅能用于/auth/refresh-token接口，不能用于其他API鉴权
+        if (claims.isRefreshToken()) {
+            log.warn("RefreshToken不能用于API鉴权：jti={}, username={}", jti, username);
+            return unauthorizedResponse(exchange);
+        }
+
+        // 从JWT中提取权限列表，透传给下游服务（供@RequiresPermission切面使用）
+        List<String> permissions = claims.getPermissions();
+        String permissionsStr = (permissions != null && !permissions.isEmpty())
+                ? String.join(",", permissions) : "";
+
+        // 检查Token是否已被吊销（黑名单检查）
+        if (jti != null && Boolean.TRUE.equals(redisTemplate.hasKey(TOKEN_BLACKLIST_PREFIX + jti))) {
+            log.warn("Token已被吊销：jti={}, username={}", jti, username);
+            return unauthorizedResponse(exchange);
+        }
+
+        log.debug("JWT认证通过：username={}, tenantId={}", username, verifiedTenantId);
+
+        // 关键安全修复：从JWT Claims中提取租户ID，强制覆盖客户端可能伪造的X-Tenant-ID
+        // 使用headers.set()确保替换而非追加，防止客户端伪造的租户ID残留
+        ServerHttpRequest mutatedRequest = request.mutate()
+                .headers(headers -> {
+                    headers.set(USER_HEADER, username);
+                    headers.set(TENANT_HEADER, verifiedTenantId);
+                    headers.set(TENANT_VERIFIED_HEADER, "true");
+                    // 透传权限标识列表（逗号分隔），供下游@RequiresPermission切面使用
+                    if (!permissionsStr.isEmpty()) {
+                        headers.set("X-User-Permissions", permissionsStr);
+                    }
+                })
+                .build();
+
+        return chain.filter(exchange.mutate().request(mutatedRequest).build());
     }
 
     /**

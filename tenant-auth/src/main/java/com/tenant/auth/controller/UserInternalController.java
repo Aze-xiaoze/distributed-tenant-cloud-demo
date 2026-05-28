@@ -36,31 +36,21 @@ public class UserInternalController extends UserGrpcServiceImplBase {
     @Override
     public void getUserByUsername(GetUserByUsernameRequest request,
                                   StreamObserver<UserResponse> responseObserver) {
-        try {
-            User user = userService.getUserByUsername(request.getUsername());
+        User user = userService.getUserByUsername(request.getUsername());
 
-            UserResponse.Builder responseBuilder = UserResponse.newBuilder();
+        UserResponse.Builder responseBuilder = UserResponse.newBuilder();
 
-            if (user != null) {
-                responseBuilder.setCode(200)
-                        .setMessage("操作成功")
-                        .setData(buildUserData(user));
-            } else {
-                responseBuilder.setCode(400)
-                        .setMessage("用户不存在");
-            }
-
-            responseObserver.onNext(responseBuilder.build());
-            responseObserver.onCompleted();
-
-        } catch (Exception e) {
-            log.error("gRPC getUserByUsername调用失败", e);
-            responseObserver.onNext(UserResponse.newBuilder()
-                    .setCode(500)
-                    .setMessage("用户服务内部错误: " + e.getMessage())
-                    .build());
-            responseObserver.onCompleted();
+        if (user != null) {
+            responseBuilder.setCode(200)
+                    .setMessage("操作成功")
+                    .setData(buildUserData(user));
+        } else {
+            responseBuilder.setCode(400)
+                    .setMessage("用户不存在");
         }
+
+        responseObserver.onNext(responseBuilder.build());
+        responseObserver.onCompleted();
     }
 
     /**
@@ -73,31 +63,21 @@ public class UserInternalController extends UserGrpcServiceImplBase {
     @Override
     public void getUserById(GetUserByIdRequest request,
                             StreamObserver<UserResponse> responseObserver) {
-        try {
-            User user = userService.getUserById(request.getUserId());
+        User user = userService.getUserById(request.getUserId());
 
-            UserResponse.Builder responseBuilder = UserResponse.newBuilder();
+        UserResponse.Builder responseBuilder = UserResponse.newBuilder();
 
-            if (user != null) {
-                responseBuilder.setCode(200)
-                        .setMessage("操作成功")
-                        .setData(buildUserData(user));
-            } else {
-                responseBuilder.setCode(400)
-                        .setMessage("用户不存在");
-            }
-
-            responseObserver.onNext(responseBuilder.build());
-            responseObserver.onCompleted();
-
-        } catch (Exception e) {
-            log.error("gRPC getUserById调用失败", e);
-            responseObserver.onNext(UserResponse.newBuilder()
-                    .setCode(500)
-                    .setMessage("用户服务内部错误: " + e.getMessage())
-                    .build());
-            responseObserver.onCompleted();
+        if (user != null) {
+            responseBuilder.setCode(200)
+                    .setMessage("操作成功")
+                    .setData(buildUserData(user));
+        } else {
+            responseBuilder.setCode(400)
+                    .setMessage("用户不存在");
         }
+
+        responseObserver.onNext(responseBuilder.build());
+        responseObserver.onCompleted();
     }
 
     /**

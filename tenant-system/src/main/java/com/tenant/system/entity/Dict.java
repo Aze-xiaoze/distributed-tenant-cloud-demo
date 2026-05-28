@@ -1,6 +1,7 @@
 package com.tenant.system.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -26,16 +27,19 @@ public class Dict implements Serializable {
     /**
      * 字典类型
      */
+    @NotBlank(message = "字典类型不能为空")
     private String dictType;
 
     /**
      * 字典标签
      */
+    @NotBlank(message = "字典标签不能为空")
     private String dictLabel;
 
     /**
      * 字典值
      */
+    @NotBlank(message = "字典值不能为空")
     private String dictValue;
 
     /**

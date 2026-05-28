@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.tenant.common.vo.Result;
 import com.tenant.system.entity.Role;
 import com.tenant.system.service.RoleService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -61,7 +62,7 @@ public class RoleController {
      * @return 操作结果
      */
     @PostMapping
-    public Result<String> add(@RequestBody Role role) {
+    public Result<String> add(@Valid @RequestBody Role role) {
         boolean success = roleService.save(role);
         return success ? Result.success("新增成功") : Result.error("新增失败");
     }
@@ -73,7 +74,7 @@ public class RoleController {
      * @return 操作结果
      */
     @PutMapping
-    public Result<String> update(@RequestBody Role role) {
+    public Result<String> update(@Valid @RequestBody Role role) {
         boolean success = roleService.updateById(role);
         return success ? Result.success("更新成功") : Result.error("更新失败");
     }

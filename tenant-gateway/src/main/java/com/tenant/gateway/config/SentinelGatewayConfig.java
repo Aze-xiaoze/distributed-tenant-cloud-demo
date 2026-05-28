@@ -5,6 +5,9 @@ import com.alibaba.csp.sentinel.adapter.gateway.common.rule.GatewayRuleManager;
 import com.alibaba.csp.sentinel.adapter.gateway.sc.SentinelGatewayFilter;
 import com.alibaba.csp.sentinel.adapter.gateway.sc.callback.BlockRequestHandler;
 import com.alibaba.csp.sentinel.adapter.gateway.sc.callback.GatewayCallbackManager;
+import com.alibaba.csp.sentinel.slots.block.degrade.DegradeRule;
+import com.alibaba.csp.sentinel.slots.block.degrade.DegradeRuleManager;
+import com.alibaba.csp.sentinel.slots.block.degrade.circuitbreaker.CircuitBreakerStrategy;
 import jakarta.annotation.PostConstruct;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,7 +16,9 @@ import org.springframework.web.reactive.function.server.ServerResponse;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -75,11 +80,54 @@ public class SentinelGatewayConfig {
     /**
      * 初始化熔断降级规则
      * <p>当服务异常率超阈值或响应时间过长时自动熔断，保护系统整体可用性
+     * <p>兜底规则（未接入Dashboard时生效）：
+     * <ul>
+     *   <li>慢调用比例：响应时间超过1秒且比例超过50%时触发熔断，熔断时长10秒</li>
+     *   <li>异常比例：异常比例超过50%时触发熔断，熔断时长10秒</li>
+     * </ul>
      */
     private void initDegradeRules() {
-        // 熔断规则由 Sentinel Dashboard 动态下发更灵活
-        // 此处仅设置兜底规则，确保未接入Dashboard时也有基本保护
-        // 实际生产环境建议通过 Dashboard 或 Nacos 数据源配置
+        List<DegradeRule> rules = new ArrayList<>();
+
+        // 认证服务：慢调用比例熔断（响应时间>1s且比例>50%，统计时长10s，熔断10s）
+        rules.add(new DegradeRule("tenant-auth")
+                .setGrade(CircuitBreakerStrategy.SLOW_REQUEST_RATIO.getType())
+                .setCount(0.5)
+                .setTimeWindow(10)
+                .setSlowRatioThreshold(1.0)
+                .setMinRequestAmount(5)
+                .setStatIntervalMs(10000)
+        );
+
+        // 认证服务：异常比例熔断（异常比例>50%，统计时长10s，熔断10s）
+        rules.add(new DegradeRule("tenant-auth")
+                .setGrade(CircuitBreakerStrategy.ERROR_RATIO.getType())
+                .setCount(0.5)
+                .setTimeWindow(10)
+                .setMinRequestAmount(5)
+                .setStatIntervalMs(10000)
+        );
+
+        // 系统管理服务：慢调用比例熔断
+        rules.add(new DegradeRule("tenant-system")
+                .setGrade(CircuitBreakerStrategy.SLOW_REQUEST_RATIO.getType())
+                .setCount(0.5)
+                .setTimeWindow(10)
+                .setSlowRatioThreshold(1.0)
+                .setMinRequestAmount(5)
+                .setStatIntervalMs(10000)
+        );
+
+        // 系统管理服务：异常比例熔断
+        rules.add(new DegradeRule("tenant-system")
+                .setGrade(CircuitBreakerStrategy.ERROR_RATIO.getType())
+                .setCount(0.5)
+                .setTimeWindow(10)
+                .setMinRequestAmount(5)
+                .setStatIntervalMs(10000)
+        );
+
+        DegradeRuleManager.loadRules(rules);
     }
 
     /**

@@ -1,7 +1,8 @@
 package com.tenant.auth.util;
 
 import com.tenant.auth.config.properties.JwtProperties;
-import io.jsonwebtoken.Claims;
+import com.tenant.common.security.JwtTokenClaims;
+import com.tenant.common.security.JwtTokenParser;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Component;
@@ -31,9 +32,11 @@ import java.util.UUID;
 public class JwtUtil {
 
     private final JwtProperties jwtProperties;
+    private final JwtTokenParser tokenParser;
 
     public JwtUtil(JwtProperties jwtProperties) {
         this.jwtProperties = jwtProperties;
+        this.tokenParser = new JwtTokenParser(jwtProperties.getSecret());
     }
 
     /**
@@ -54,8 +57,7 @@ public class JwtUtil {
      * @return 用户名
      */
     public String getUsernameFromToken(String token) {
-        Claims claims = getClaimsFromToken(token);
-        return claims.getSubject();
+        return tokenParser.getUsername(token);
     }
 
     /**
@@ -65,8 +67,7 @@ public class JwtUtil {
      * @return 租户ID
      */
     public String getTenantIdFromToken(String token) {
-        Claims claims = getClaimsFromToken(token);
-        return claims.get("tenantId", String.class);
+        return tokenParser.getTenantId(token);
     }
 
     /**
@@ -77,8 +78,7 @@ public class JwtUtil {
      * @return JWT唯一标识
      */
     public String getJtiFromToken(String token) {
-        Claims claims = getClaimsFromToken(token);
-        return claims.getId();
+        return tokenParser.getJti(token);
     }
 
     /**
@@ -89,9 +89,7 @@ public class JwtUtil {
      * @return 签发时间的毫秒时间戳
      */
     public long getIssuedAtMillisFromToken(String token) {
-        Claims claims = getClaimsFromToken(token);
-        Date issuedAt = claims.getIssuedAt();
-        return issuedAt != null ? issuedAt.getTime() : 0;
+        return tokenParser.getIssuedAtMillis(token);
     }
 
     /**
@@ -100,10 +98,8 @@ public class JwtUtil {
      * @param token 令牌
      * @return 角色编码列表
      */
-    @SuppressWarnings("unchecked")
     public List<String> getRolesFromToken(String token) {
-        Claims claims = getClaimsFromToken(token);
-        return claims.get("roles", List.class);
+        return tokenParser.getRoles(token);
     }
 
     /**
@@ -112,10 +108,8 @@ public class JwtUtil {
      * @param token 令牌
      * @return 权限标识列表
      */
-    @SuppressWarnings("unchecked")
     public List<String> getPermissionsFromToken(String token) {
-        Claims claims = getClaimsFromToken(token);
-        return claims.get("permissions", List.class);
+        return tokenParser.getPermissions(token);
     }
 
     /**
@@ -125,22 +119,8 @@ public class JwtUtil {
      * @return 过期日期
      */
     public Date getExpirationDateFromToken(String token) {
-        Claims claims = getClaimsFromToken(token);
-        return claims.getExpiration();
-    }
-
-    /**
-     * 从令牌中获取声明信息
-     *
-     * @param token 令牌
-     * @return 声明信息
-     */
-    private Claims getClaimsFromToken(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(getSigningKey())
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
+        long millis = tokenParser.getExpirationMillis(token);
+        return millis > 0 ? new Date(millis) : null;
     }
 
     /**
@@ -150,8 +130,7 @@ public class JwtUtil {
      * @return 是否过期
      */
     private boolean isTokenExpired(String token) {
-        Date expiration = getExpirationDateFromToken(token);
-        return expiration.before(new Date());
+        return tokenParser.isTokenExpired(token);
     }
 
     /**
@@ -222,12 +201,7 @@ public class JwtUtil {
      * @return true=RefreshToken，false=AccessToken
      */
     public boolean isRefreshToken(String token) {
-        try {
-            Claims claims = getClaimsFromToken(token);
-            return "refresh".equals(claims.get("tokenType", String.class));
-        } catch (Exception e) {
-            return false;
-        }
+        return tokenParser.isRefreshToken(token);
     }
 
     /**
@@ -238,7 +212,6 @@ public class JwtUtil {
      * @return 是否有效
      */
     public Boolean validateToken(String token, String username) {
-        String tokenUsername = getUsernameFromToken(token);
-        return tokenUsername.equals(username) && !isTokenExpired(token);
+        return tokenParser.validateToken(token, username);
     }
 }

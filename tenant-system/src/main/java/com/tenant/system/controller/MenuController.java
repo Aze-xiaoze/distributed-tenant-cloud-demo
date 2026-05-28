@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.tenant.common.vo.Result;
 import com.tenant.system.entity.Menu;
 import com.tenant.system.service.MenuService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -60,7 +61,7 @@ public class MenuController {
      * 新增菜单
      */
     @PostMapping
-    public Result<String> add(@RequestBody Menu menu) {
+    public Result<String> add(@Valid @RequestBody Menu menu) {
         boolean success = menuService.save(menu);
         return success ? Result.success("新增成功") : Result.error("新增失败");
     }
@@ -69,7 +70,7 @@ public class MenuController {
      * 更新菜单
      */
     @PutMapping
-    public Result<String> update(@RequestBody Menu menu) {
+    public Result<String> update(@Valid @RequestBody Menu menu) {
         boolean success = menuService.updateById(menu);
         return success ? Result.success("更新成功") : Result.error("更新失败");
     }

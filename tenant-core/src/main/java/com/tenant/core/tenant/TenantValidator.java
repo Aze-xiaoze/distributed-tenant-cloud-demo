@@ -30,10 +30,10 @@ public class TenantValidator {
 
     private static final Logger log = LoggerFactory.getLogger(TenantValidator.class);
 
-    private static final String TENANT_EXPIRED_PREFIX = "tenant:expired:";
-    private static final String TENANT_USER_COUNT_PREFIX = "tenant:user:count:";
-    private static final long EXPIRED_CACHE_TTL_HOURS = 1;
-    private static final long USER_COUNT_CACHE_TTL_MINUTES = 5;
+    private static final String TENANT_EXPIRED_PREFIX = com.tenant.common.constant.TenantConstants.TENANT_EXPIRED_PREFIX;
+    private static final String TENANT_USER_COUNT_PREFIX = com.tenant.common.constant.TenantConstants.TENANT_USER_COUNT_PREFIX;
+    private static final long EXPIRED_CACHE_TTL_HOURS = com.tenant.common.constant.TenantConstants.TENANT_EXPIRED_CACHE_TTL_HOURS;
+    private static final long USER_COUNT_CACHE_TTL_MINUTES = com.tenant.common.constant.TenantConstants.TENANT_USER_COUNT_CACHE_TTL_MINUTES;
 
     private final StringRedisTemplate redisTemplate;
 

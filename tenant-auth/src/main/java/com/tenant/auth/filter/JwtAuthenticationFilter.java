@@ -41,14 +41,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private static final Logger log = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
-    private static final String AUTHORIZATION_HEADER = "Authorization";
-    private static final String BEARER_PREFIX = "Bearer ";
-    private static final String TENANT_HEADER_NAME = "X-Tenant-ID";
+    private static final String AUTHORIZATION_HEADER = com.tenant.common.constant.TenantConstants.AUTHORIZATION_HEADER;
+    private static final String BEARER_PREFIX = com.tenant.common.constant.TenantConstants.BEARER_PREFIX;
+    private static final String TENANT_HEADER_NAME = com.tenant.common.constant.TenantConstants.X_TENANT_ID_HEADER;
 
     /**
      * 租户ID来源验证标记头（由网关AuthGatewayFilter设置）
      */
-    private static final String TENANT_VERIFIED_HEADER = "X-Tenant-Verified";
+    private static final String TENANT_VERIFIED_HEADER = com.tenant.common.constant.TenantConstants.X_TENANT_VERIFIED_HEADER;
 
     private final JwtUtil jwtUtil;
 
@@ -104,7 +104,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     }
                     // 如果JWT中无角色和权限，默认赋予ROLE_USER
                     if (authorities.isEmpty()) {
-                        authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
+                        authorities.add(new SimpleGrantedAuthority(com.tenant.common.constant.TenantConstants.ROLE_USER));
                     }
 
                     UsernamePasswordAuthenticationToken authentication =

@@ -1,6 +1,7 @@
 package com.tenant.system.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -25,11 +26,13 @@ public class SysConfig implements Serializable {
     /**
      * 配置键
      */
+    @NotBlank(message = "配置键不能为空")
     private String configKey;
 
     /**
      * 配置值
      */
+    @NotBlank(message = "配置值不能为空")
     private String configValue;
 
     /**

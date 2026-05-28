@@ -12,14 +12,16 @@ import java.util.concurrent.TimeUnit;
  * 基于Redis实现JWT令牌的吊销机制，支持用户注销和强制下线功能
  * <p>存储结构：
  * <ul>
- *   <li>单Token吊销：{@code token:blacklist:{jti}} → "1"，TTL=Token剩余有效期</li>
- *   <li>用户全量吊销：{@code token:blacklist:user:{username}:{issuedAt} } → "1"，TTL=最长Token有效期</li>
+ *   <li>单Token吊销：{@code token:blacklist:jti:{jti}} → "1"，TTL=Token剩余有效期</li>
+ *   <li>用户全量吊销：{@code token:blacklist:user:{username}} → ZSet(score=issuedBefore, member=issuedBefore)，TTL=最长Token有效期</li>
  * </ul>
  * <p>判断Token是否被吊销的逻辑：
  * <ol>
  *   <li>检查Token的jti是否在黑名单中</li>
- *   <li>检查用户在Token签发时间之后是否有全量吊销记录</li>
+ *   <li>检查用户ZSet中是否存在score大于Token签发时间的记录</li>
  * </ol>
+ * <p><b>优化说明</b>：用户全量吊销使用Redis ZSet替代原KV+KEYS模式，避免KEYS命令阻塞Redis，
+ * 查询复杂度从O(N)降为O(log N)
  * <p><b>前置条件</b>：JWT生成时必须包含jti（唯一标识）和iat（签发时间）声明
  *
  * @author Aze
@@ -32,13 +34,13 @@ public class TokenBlacklistService {
     /**
      * 单Token黑名单Key前缀：token:blacklist:jti:{jti}
      */
-    private static final String TOKEN_BLACKLIST_PREFIX = "token:blacklist:jti:";
+    private static final String TOKEN_BLACKLIST_PREFIX = com.tenant.common.constant.TenantConstants.TOKEN_BLACKLIST_PREFIX;
 
     /**
-     * 用户全量吊销Key前缀：token:blacklist:user:{username}:{issuedAt}
-     * issuedAt用于区分不同批次的全量吊销
+     * 用户全量吊销ZSet Key：token:blacklist:user:{username}
+     * 使用ZSet存储，score和member均为issuedBefore时间戳
      */
-    private static final String USER_BLACKLIST_PREFIX = "token:blacklist:user:";
+    private static final String USER_BLACKLIST_PREFIX = com.tenant.common.constant.TenantConstants.USER_BLACKLIST_PREFIX;
 
     /**
      * 默认Token最大有效期（毫秒），用于设置用户全量吊销的TTL
@@ -72,16 +74,20 @@ public class TokenBlacklistService {
 
     /**
      * 吊销指定用户的所有Token（强制下线）
-     * 通过记录用户的吊销时间点，使得在该时间点之前签发的所有Token失效
+     * 使用Redis ZSet记录吊销时间点，避免KEYS命令阻塞
      *
      * @param username      用户名
      * @param issuedBefore  在此时间之前签发的Token全部失效（毫秒时间戳）
      * @param tokenMaxTtlMs Token最大有效期（毫秒），用于设置TTL
      */
     public void revokeAllUserTokens(String username, long issuedBefore, long tokenMaxTtlMs) {
-        String key = USER_BLACKLIST_PREFIX + username + ":" + issuedBefore;
+        String key = USER_BLACKLIST_PREFIX + username;
         long ttl = Math.max(tokenMaxTtlMs / 1000, 1);
-        redisTemplate.opsForValue().set(key, "1", ttl, TimeUnit.SECONDS);
+
+        // 使用ZSet存储吊销时间点，score和member均为issuedBefore
+        redisTemplate.opsForZSet().add(key, String.valueOf(issuedBefore), issuedBefore);
+        redisTemplate.expire(key, ttl, TimeUnit.SECONDS);
+
         log.info("用户全量Token已吊销：username={}, issuedBefore={}, ttl={}s", username, issuedBefore, ttl);
     }
 
@@ -90,7 +96,7 @@ public class TokenBlacklistService {
      * <p>检查逻辑：
      * <ol>
      *   <li>检查Token的jti是否在单Token黑名单中</li>
-     *   <li>检查用户在Token签发时间之前是否有全量吊销记录</li>
+     *   <li>检查用户ZSet中是否存在score大于Token签发时间的记录（O(log N)）</li>
      * </ol>
      *
      * @param jti      Token唯一标识
@@ -108,28 +114,13 @@ public class TokenBlacklistService {
             }
         }
 
-        // 2. 检查用户全量吊销（需要扫描用户维度的黑名单Key）
-        // 使用模式匹配查找是否存在 issuedAt 之前的全量吊销记录
-        String pattern = USER_BLACKLIST_PREFIX + username + ":*";
-        var keys = redisTemplate.keys(pattern);
-        if (keys != null) {
-            for (String key : keys) {
-                // Key格式：token:blacklist:user:{username}:{issuedBeforeTimestamp}
-                String[] parts = key.split(":");
-                if (parts.length >= 5) {
-                    try {
-                        long issuedBefore = Long.parseLong(parts[4]);
-                        // 如果Token签发时间早于全量吊销时间点，则该Token已被吊销
-                        if (issuedAt < issuedBefore) {
-                            log.debug("Token已被用户全量吊销：username={}, issuedAt={}, issuedBefore={}",
-                                    username, issuedAt, issuedBefore);
-                            return true;
-                        }
-                    } catch (NumberFormatException e) {
-                        log.warn("解析用户黑名单Key失败：key={}", key);
-                    }
-                }
-            }
+        // 2. 检查用户全量吊销（使用ZSet count，O(log N)，避免KEYS阻塞）
+        String key = USER_BLACKLIST_PREFIX + username;
+        // 查找score > issuedAt的记录数量（即是否有在Token签发之后的全量吊销）
+        Long count = redisTemplate.opsForZSet().count(key, issuedAt + 1, Double.POSITIVE_INFINITY);
+        if (count != null && count > 0) {
+            log.debug("Token已被用户全量吊销：username={}, issuedAt={}", username, issuedAt);
+            return true;
         }
 
         return false;

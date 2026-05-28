@@ -46,7 +46,7 @@ public class PermissionAspect {
     /**
      * 超级管理员角色，自动拥有所有权限
      */
-    private static final String SUPER_ADMIN_ROLE = "ROLE_SUPER_ADMIN";
+    private static final String SUPER_ADMIN_ROLE = com.tenant.common.constant.TenantConstants.ROLE_SUPER_ADMIN;
 
     /**
      * 请求头中的权限标识Key（由网关从JWT解析后设置）

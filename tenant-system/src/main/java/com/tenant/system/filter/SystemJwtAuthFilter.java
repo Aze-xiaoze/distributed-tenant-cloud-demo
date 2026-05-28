@@ -1,9 +1,8 @@
 package com.tenant.system.filter;
 
+import com.tenant.common.security.JwtTokenClaims;
+import com.tenant.common.security.JwtTokenParser;
 import com.tenant.core.tenant.TenantContextHolder;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -19,9 +18,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import javax.crypto.SecretKey;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -40,14 +37,14 @@ public class SystemJwtAuthFilter extends OncePerRequestFilter {
 
     private static final Logger log = LoggerFactory.getLogger(SystemJwtAuthFilter.class);
 
-    private static final String AUTHORIZATION_HEADER = "Authorization";
-    private static final String BEARER_PREFIX = "Bearer ";
-    private static final String TENANT_HEADER_NAME = "X-Tenant-ID";
+    private static final String AUTHORIZATION_HEADER = com.tenant.common.constant.TenantConstants.AUTHORIZATION_HEADER;
+    private static final String BEARER_PREFIX = com.tenant.common.constant.TenantConstants.BEARER_PREFIX;
+    private static final String TENANT_HEADER_NAME = com.tenant.common.constant.TenantConstants.X_TENANT_ID_HEADER;
 
     /**
      * 租户ID来源验证标记头（由网关AuthGatewayFilter设置）
      */
-    private static final String TENANT_VERIFIED_HEADER = "X-Tenant-Verified";
+    private static final String TENANT_VERIFIED_HEADER = com.tenant.common.constant.TenantConstants.X_TENANT_VERIFIED_HEADER;
 
     @Value("${jwt.secret:defaultSecretKeyForTenantCloudPlatformThatIsAtLeast64BytesLongForHS512}")
     private String secret;
@@ -58,19 +55,15 @@ public class SystemJwtAuthFilter extends OncePerRequestFilter {
                                     FilterChain filterChain) throws ServletException, IOException {
         try {
             String token = extractToken(request);
+            JwtTokenParser tokenParser = new JwtTokenParser(secret);
 
             if (token != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                SecretKey key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
-                Claims claims = Jwts.parserBuilder()
-                        .setSigningKey(key)
-                        .build()
-                        .parseClaimsJws(token)
-                        .getBody();
+                JwtTokenClaims claims = tokenParser.parseToken(token);
 
-                String username = claims.getSubject();
-                String tenantId = claims.get("tenantId", String.class);
+                if (claims != null && claims.getUsername() != null) {
+                    String username = claims.getUsername();
+                    String tenantId = claims.getTenantId();
 
-                if (username != null) {
                     // 设置租户上下文（JWT中的租户ID为可信来源）
                     if (tenantId != null) {
                         TenantContextHolder.setCurrentTenantId(tenantId);
@@ -88,10 +81,8 @@ public class SystemJwtAuthFilter extends OncePerRequestFilter {
                     }
 
                     // 设置Security上下文（从JWT提取角色和权限）
-                    @SuppressWarnings("unchecked")
-                    List<String> roles = claims.get("roles", List.class);
-                    @SuppressWarnings("unchecked")
-                    List<String> permissions = claims.get("permissions", List.class);
+                    List<String> roles = claims.getRoles();
+                    List<String> permissions = claims.getPermissions();
                     List<SimpleGrantedAuthority> authorities = new ArrayList<>();
                     // 添加角色（ROLE_前缀，供@PreAuthorize("hasRole('XXX')")使用）
                     if (roles != null) {
@@ -107,7 +98,7 @@ public class SystemJwtAuthFilter extends OncePerRequestFilter {
                     }
                     // 如果JWT中无角色和权限，默认赋予ROLE_USER
                     if (authorities.isEmpty()) {
-                        authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
+                        authorities.add(new SimpleGrantedAuthority(com.tenant.common.constant.TenantConstants.ROLE_USER));
                     }
 
                     UsernamePasswordAuthenticationToken authentication =

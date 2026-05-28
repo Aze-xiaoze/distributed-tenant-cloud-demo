@@ -1,6 +1,8 @@
 package com.tenant.system.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -32,11 +34,13 @@ public class Menu implements Serializable {
     /**
      * 菜单名称
      */
+    @NotBlank(message = "菜单名称不能为空")
     private String menuName;
 
     /**
      * 菜单类型（1-目录，2-菜单，3-按钮）
      */
+    @NotNull(message = "菜单类型不能为空")
     private Integer menuType;
 
     /**

@@ -1,5 +1,6 @@
 package com.tenant.system.controller;
 
+import com.tenant.common.util.FileUploadValidator;
 import com.tenant.common.vo.Result;
 import com.tenant.core.storage.FileStorageService;
 import io.minio.StatObjectResponse;
@@ -50,8 +51,10 @@ public class FileController {
         if (fileStorageService == null) {
             return Result.error("文件存储服务未配置");
         }
-        if (file.isEmpty()) {
-            return Result.error("上传文件不能为空");
+
+        String validateMsg = FileUploadValidator.validate(file);
+        if (validateMsg != null) {
+            return Result.error(validateMsg);
         }
 
         try {

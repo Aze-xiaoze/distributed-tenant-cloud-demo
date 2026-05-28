@@ -1,10 +1,14 @@
 package com.tenant.core.config;
 
 import com.tenant.core.filter.MdcFilter;
+import com.tenant.core.resolver.CurrentUserArgumentResolver;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+import java.util.List;
 
 /**
  * Web MVC 全局配置
@@ -18,6 +22,12 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  */
 @Configuration
 public class WebMvcConfig implements WebMvcConfigurer {
+
+    private final CurrentUserArgumentResolver currentUserArgumentResolver;
+
+    public WebMvcConfig(CurrentUserArgumentResolver currentUserArgumentResolver) {
+        this.currentUserArgumentResolver = currentUserArgumentResolver;
+    }
 
     /**
      * 注册字符编码过滤器
@@ -50,5 +60,15 @@ public class WebMvcConfig implements WebMvcConfigurer {
         registration.setName("mdcFilter");
         registration.setOrder(org.springframework.core.Ordered.HIGHEST_PRECEDENCE + 1);
         return registration;
+    }
+
+    /**
+     * 注册自定义参数解析器
+     * <p>将 {@link CurrentUserArgumentResolver} 注册到 Spring MVC，
+     * 使 Controller 中标注 {@link com.tenant.common.annotation.CurrentUser} 的参数自动注入当前用户
+     */
+    @Override
+    public void addArgumentResolvers(List<HandlerMethodArgumentResolver> resolvers) {
+        resolvers.add(currentUserArgumentResolver);
     }
 }

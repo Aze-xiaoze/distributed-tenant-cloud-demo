@@ -25,6 +25,13 @@ spring:
             - Path=/auth/**
           filters:
             - StripPrefix=0
+            # 限流配置：认证服务每租户每IP 10次/秒，防止暴力破解
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 10
+                redis-rate-limiter.burstCapacity: 20
+                redis-rate-limiter.requestedTokens: 1
+                key-resolver: "#{@tenantIpKeyResolver}"
 
         # 系统管理服务路由
         - id: tenant-system
@@ -33,26 +40,40 @@ spring:
             - Path=/system/**
           filters:
             - StripPrefix=1
+            # 限流配置：系统管理每租户每IP 20次/秒
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 20
+                redis-rate-limiter.burstCapacity: 40
+                redis-rate-limiter.requestedTokens: 1
+                key-resolver: "#{@tenantIpKeyResolver}"
 
-      # 跨域配置
+      # 跨域配置（安全收窄：生产环境禁止allowed-origins为*配合allow-credentials:true）
       globalcors:
         cors-configurations:
           '[/**]':
-            allowed-origins: "*"
+            # 安全收窄：仅允许可信来源域，生产环境应配置为实际前端域名
+            # 示例：allowed-origins: https://app.tenant.com,https://admin.tenant.com
+            allowed-origins:
+              - "${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:8080}"
             allowed-methods:
               - GET
               - POST
               - PUT
               - DELETE
               - OPTIONS
-            allowed-headers: "*"
+            allowed-headers:
+              - Authorization
+              - Content-Type
+              - X-Tenant-ID
+              - X-Request-Id
             allow-credentials: true
             max-age: 3600
 
 # JWT配置（与auth服务保持一致）
 jwt:
   secret: defaultSecretKeyForTenantCloudPlatformThatIsAtLeast64BytesLongForHS512
-  expiration: 3600000
+  expiration: 1800000
 
 # 日志配置
 logging:

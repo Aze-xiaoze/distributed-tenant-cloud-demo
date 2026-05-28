@@ -3,8 +3,12 @@ package com.tenant.common.exception;
 import com.tenant.common.vo.Result;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import java.util.stream.Collectors;
 
 /**
  * 全局异常处理器
@@ -65,5 +69,21 @@ public class GlobalExceptionHandler {
     public Result<Object> handleIllegalArgumentException(IllegalArgumentException e) {
         logger.error("参数校验异常: {}", e.getMessage());
         return Result.fail("参数错误: " + e.getMessage());
+    }
+
+    /**
+     * 处理Hibernate Validator参数校验异常（@Valid触发的校验）
+     * <p>将所有字段校验错误聚合为一条友好的错误消息
+     *
+     * @param e 校验异常对象
+     * @return 错误响应结果，包含所有字段校验错误
+     */
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public Result<Object> handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
+        String errors = e.getBindingResult().getFieldErrors().stream()
+                .map(FieldError::getDefaultMessage)
+                .collect(Collectors.joining("; "));
+        logger.warn("参数校验失败: {}", errors);
+        return Result.fail("参数校验失败: " + errors);
     }
 }

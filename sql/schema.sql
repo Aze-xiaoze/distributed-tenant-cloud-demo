@@ -206,6 +206,54 @@ CREATE TABLE `sys_config` (
 -- 初始化系统配置
 INSERT INTO `sys_config` (`config_key`, `config_value`, `description`) VALUES
 ('jwt.secret', 'defaultSecretKeyForTenantCloudPlatformThatIsAtLeast64BytesLongForHS512', 'JWT签名密钥'),
-('jwt.expiration', '3600000', 'JWT过期时间（毫秒）'),
+('jwt.expiration', '1800000', 'AccessToken过期时间（毫秒，默认30分钟）'),
+('jwt.refresh-expiration', '604800000', 'RefreshToken过期时间（毫秒，默认7天）'),
 ('tenant.default-id', 'default_tenant', '默认租户ID'),
 ('tenant.enable', 'true', '是否启用多租户');
+
+-- ============================================================
+-- 9. 操作日志表（共享表，不进行租户过滤）
+-- ============================================================
+DROP TABLE IF EXISTS `sys_oper_log`;
+CREATE TABLE `sys_oper_log` (
+    `id`              BIGINT        NOT NULL AUTO_INCREMENT COMMENT '日志ID',
+    `title`           VARCHAR(64)   DEFAULT NULL COMMENT '操作模块',
+    `operation_type`  TINYINT       DEFAULT NULL COMMENT '操作类型（1-新增，2-修改，3-删除，4-查询，5-导出，6-导入）',
+    `method`          VARCHAR(256)  DEFAULT NULL COMMENT '方法名称',
+    `request_method`  VARCHAR(10)   DEFAULT NULL COMMENT '请求方式（GET/POST/PUT/DELETE）',
+    `operator`        VARCHAR(64)   DEFAULT NULL COMMENT '操作人',
+    `tenant_id`       VARCHAR(64)   DEFAULT NULL COMMENT '租户ID',
+    `url`             VARCHAR(512)  DEFAULT NULL COMMENT '请求URL',
+    `ip`              VARCHAR(64)   DEFAULT NULL COMMENT '操作IP',
+    `request_params`  TEXT          DEFAULT NULL COMMENT '请求参数',
+    `response_result` TEXT          DEFAULT NULL COMMENT '返回结果',
+    `status`          TINYINT       NOT NULL DEFAULT 1 COMMENT '操作状态（1-成功，0-失败）',
+    `error_msg`       TEXT          DEFAULT NULL COMMENT '错误消息',
+    `execution_time`  BIGINT        DEFAULT NULL COMMENT '执行耗时（毫秒）',
+    `create_time`     DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    PRIMARY KEY (`id`),
+    KEY `idx_operator` (`operator`),
+    KEY `idx_tenant_id` (`tenant_id`),
+    KEY `idx_create_time` (`create_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='操作日志表';
+
+-- ============================================================
+-- 10. 登录日志表（共享表，不进行租户过滤）
+-- ============================================================
+DROP TABLE IF EXISTS `sys_login_log`;
+CREATE TABLE `sys_login_log` (
+    `id`              BIGINT        NOT NULL AUTO_INCREMENT COMMENT '日志ID',
+    `username`        VARCHAR(64)   DEFAULT NULL COMMENT '用户名',
+    `tenant_id`       VARCHAR(64)   DEFAULT NULL COMMENT '租户ID',
+    `ip`              VARCHAR(64)   DEFAULT NULL COMMENT '登录IP',
+    `location`        VARCHAR(128)  DEFAULT NULL COMMENT '登录地点',
+    `browser`         VARCHAR(64)   DEFAULT NULL COMMENT '浏览器',
+    `os`              VARCHAR(64)   DEFAULT NULL COMMENT '操作系统',
+    `login_status`    TINYINT       NOT NULL DEFAULT 1 COMMENT '登录状态（1-成功，0-失败）',
+    `login_message`   VARCHAR(256)  DEFAULT NULL COMMENT '登录消息',
+    `login_time`      DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '登录时间',
+    PRIMARY KEY (`id`),
+    KEY `idx_username` (`username`),
+    KEY `idx_tenant_id` (`tenant_id`),
+    KEY `idx_login_time` (`login_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='登录日志表';

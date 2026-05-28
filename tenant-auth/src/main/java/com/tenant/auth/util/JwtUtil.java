@@ -192,6 +192,45 @@ public class JwtUtil {
     }
 
     /**
+     * 生成RefreshToken（刷新令牌）
+     * <p>RefreshToken仅携带用户名和租户ID，不携带角色权限，有效期较长
+     * <p>通过tokenType声明区分AccessToken和RefreshToken，防止RefreshToken被当作AccessToken使用
+     *
+     * @param username 用户名
+     * @param tenantId 租户ID
+     * @return 刷新令牌
+     */
+    public String generateRefreshToken(String username, String tenantId) {
+        Date createdDate = new Date();
+        Date expirationDate = new Date(createdDate.getTime() + jwtProperties.getRefreshExpiration());
+
+        return Jwts.builder()
+                .setSubject(username)
+                .setId(UUID.randomUUID().toString())
+                .claim("tenantId", tenantId)
+                .claim("tokenType", "refresh") // 标记为RefreshToken，防止被当作AccessToken使用
+                .setIssuedAt(createdDate)
+                .setExpiration(expirationDate)
+                .signWith(getSigningKey())
+                .compact();
+    }
+
+    /**
+     * 判断令牌是否为RefreshToken
+     *
+     * @param token 令牌
+     * @return true=RefreshToken，false=AccessToken
+     */
+    public boolean isRefreshToken(String token) {
+        try {
+            Claims claims = getClaimsFromToken(token);
+            return "refresh".equals(claims.get("tokenType", String.class));
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
      * 验证令牌
      *
      * @param token    令牌

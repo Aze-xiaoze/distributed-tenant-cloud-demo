@@ -107,6 +107,10 @@ public class SysUserController {
      */
     @PutMapping("/{id}/status")
     public Result<String> updateStatus(@PathVariable Long id, @RequestParam Integer status) {
+        // 参数校验：状态值只能为0或1
+        if (status != 0 && status != 1) {
+            return Result.error("状态值只能为0（禁用）或1（启用）");
+        }
         SysUser user = new SysUser();
         user.setId(id);
         user.setStatus(status);

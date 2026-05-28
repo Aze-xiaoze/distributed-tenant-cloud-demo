@@ -114,7 +114,15 @@ public class AuthGatewayFilter implements GlobalFilter, Ordered {
             String username = claims.getSubject();
             String tenantId = claims.get("tenantId", String.class);
             String jti = claims.getId();
+            String tokenType = claims.get("tokenType", String.class);
             String verifiedTenantId = tenantId != null ? tenantId : "default_tenant";
+
+            // 安全检查：禁止RefreshToken被当作AccessToken使用
+            // RefreshToken仅能用于/auth/refresh-token接口，不能用于其他API鉴权
+            if ("refresh".equals(tokenType)) {
+                log.warn("RefreshToken不能用于API鉴权：jti={}, username={}", jti, username);
+                return unauthorizedResponse(exchange);
+            }
 
             // 从JWT中提取权限列表，透传给下游服务（供@RequiresPermission切面使用）
             @SuppressWarnings("unchecked")

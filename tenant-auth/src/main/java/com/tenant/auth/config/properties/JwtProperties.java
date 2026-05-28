@@ -10,7 +10,8 @@ import org.springframework.stereotype.Component;
  * <pre>
  * jwt:
  *   secret: your-secret-key-at-least-64-bytes-long-for-hs512-algorithm
- *   expiration: 3600000  # 1小时，单位毫秒
+ *   expiration: 1800000     # AccessToken 30分钟
+ *   refresh-expiration: 604800000  # RefreshToken 7天
  * </pre>
  * <p><b>安全提示</b>：生产环境必须通过环境变量 {@code JWT_SECRET} 注入密钥，禁止使用默认值
  *
@@ -27,9 +28,17 @@ public class JwtProperties {
     private String secret = "defaultSecretKeyForTenantCloudPlatformThatIsAtLeast64BytesLongForHS512";
 
     /**
-     * 有效时间（毫秒）
+     * AccessToken有效时间（毫秒），默认30分钟
+     * <p>AccessToken用于API鉴权，有效期较短以降低泄露风险
      */
-    private Long expiration = 3600000L; // 默认1小时
+    private Long expiration = 1800000L;
+
+    /**
+     * RefreshToken有效时间（毫秒），默认7天
+     * <p>RefreshToken仅用于刷新AccessToken，不携带权限信息，
+     * 有效期较长以减少用户登录频率
+     */
+    private Long refreshExpiration = 604800000L;
 
     public String getSecret() {
         return secret;
@@ -45,5 +54,13 @@ public class JwtProperties {
 
     public void setExpiration(Long expiration) {
         this.expiration = expiration;
+    }
+
+    public Long getRefreshExpiration() {
+        return refreshExpiration;
+    }
+
+    public void setRefreshExpiration(Long refreshExpiration) {
+        this.refreshExpiration = refreshExpiration;
     }
 }

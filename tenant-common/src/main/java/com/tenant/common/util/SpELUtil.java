@@ -3,7 +3,7 @@ package com.tenant.common.util;
 import org.springframework.expression.Expression;
 import org.springframework.expression.ExpressionParser;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
-import org.springframework.expression.spel.support.StandardEvaluationContext;
+import org.springframework.expression.spel.support.SimpleEvaluationContext;
 
 import java.lang.reflect.Method;
 import java.util.Map;
@@ -19,6 +19,8 @@ import java.util.concurrent.ConcurrentHashMap;
  *   <li>{@code #request.orderId} — 参数字段引用</li>
  *   <li>{@code 'order:' + #userId} — 混合字符串和参数</li>
  * </ul>
+ * <p><b>安全设计</b>：使用 {@link SimpleEvaluationContext} 替代 StandardEvaluationContext，
+ * 仅支持属性访问和简单运算，<b>禁止</b> T() 类型引用和任意方法调用，防止 SpEL 注入攻击
  * <p>表达式解析器缓存：同一表达式字符串只创建一次 {@link Expression} 对象，避免重复解析开销
  *
  * @author Aze
@@ -50,7 +52,8 @@ public class SpELUtil {
             return spelExpression;
         }
 
-        StandardEvaluationContext context = new StandardEvaluationContext();
+        // 使用 SimpleEvaluationContext（安全版本：仅支持属性访问和简单运算，禁止 T() 类型引用和任意方法调用）
+        SimpleEvaluationContext context = SimpleEvaluationContext.forReadOnlyDataBinding().build();
 
         // 将方法参数名和值注入 SpEL 上下文
         // Spring Boot 3 默认保留参数名（-parameters 编译选项），可直接通过 Method 获取

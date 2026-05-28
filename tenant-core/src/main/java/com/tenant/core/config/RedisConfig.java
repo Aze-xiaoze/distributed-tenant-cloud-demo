@@ -1,5 +1,8 @@
 package com.tenant.core.config;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -17,8 +20,8 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
  *   <li>Value — {@link GenericJackson2JsonRedisSerializer}：值使用JSON序列化，自动包含@class类型信息，
  *       反序列化时无需手动指定类型</li>
  * </ul>
- * <p><b>兼容性说明</b>：Spring Data Redis 3.x移除了 {@code Jackson2JsonRedisSerializer.setObjectMapper()} 方法，
- * 必须使用 {@link GenericJackson2JsonRedisSerializer} 替代
+ * <p><b>修复</b>：复用 JacksonConfig 中的 ObjectMapper，确保 Redis 缓存中的时间序列化格式（yyyy-MM-dd HH:mm:ss）
+ * 与 API 响应保持一致，避免缓存与接口时间格式不统一
  *
  * @author Aze
  */
@@ -28,12 +31,14 @@ public class RedisConfig {
     /**
      * 配置RedisTemplate
      * 使用GenericJackson2Json作为值序列化器（自动包含类型信息），String作为键序列化器
+     * <p>复用 JacksonConfig 的 ObjectMapper，确保时间格式化与 API 响应一致
      *
      * @param connectionFactory Redis连接工厂
+     * @param objectMapper      已配置的 ObjectMapper（复用 JacksonConfig 中的时间格式配置）
      * @return RedisTemplate 实例
      */
     @Bean
-    public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
+    public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory, ObjectMapper objectMapper) {
         RedisTemplate<String, Object> template = new RedisTemplate<>();
         template.setConnectionFactory(connectionFactory);
 
@@ -42,8 +47,16 @@ public class RedisConfig {
         template.setKeySerializer(stringRedisSerializer);
         template.setHashKeySerializer(stringRedisSerializer);
 
-        // 值使用GenericJackson2Json序列化（自动包含@class类型信息，无需手动配置ObjectMapper）
-        GenericJackson2JsonRedisSerializer jsonRedisSerializer = new GenericJackson2JsonRedisSerializer();
+        // 复制 ObjectMapper 并启用类型信息（RedisTemplate 也需要存储类型信息以便反序列化）
+        ObjectMapper cacheObjectMapper = objectMapper.copy();
+        cacheObjectMapper.activateDefaultTyping(
+                LaissezFaireSubTypeValidator.instance,
+                ObjectMapper.DefaultTyping.NON_FINAL,
+                JsonTypeInfo.As.PROPERTY
+        );
+
+        // 值使用GenericJackson2Json序列化（复用 JacksonConfig 的 ObjectMapper，确保时间格式一致）
+        GenericJackson2JsonRedisSerializer jsonRedisSerializer = new GenericJackson2JsonRedisSerializer(cacheObjectMapper);
         template.setValueSerializer(jsonRedisSerializer);
         template.setHashValueSerializer(jsonRedisSerializer);
 

@@ -75,6 +75,12 @@
             <artifactId>spring-cloud-starter-loadbalancer</artifactId>
         </dependency>
 
+        <!-- Spring Boot Redis（网关需要访问Redis检查Token黑名单） -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis-reactive</artifactId>
+        </dependency>
+
         <!-- Spring Boot Actuator 监控启动器 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

@@ -8,9 +8,11 @@ import com.tenant.api.grpc.user.GetUserByUsernameRequest;
 import com.tenant.api.grpc.user.UserGrpcServiceGrpc;
 import com.tenant.api.grpc.user.UserResponse;
 import com.tenant.common.vo.Result;
+import com.tenant.core.security.TokenBlacklistService;
 import com.tenant.system.entity.SysUser;
 import com.tenant.system.service.SysUserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -30,6 +32,15 @@ public class SysUserController {
 
     @Autowired
     private UserGrpcServiceGrpc.UserGrpcServiceBlockingStub userGrpcStub;
+
+    @Autowired
+    private TokenBlacklistService tokenBlacklistService;
+
+    /**
+     * JWT过期时间（毫秒），用于设置用户全量吊销的TTL
+     */
+    @Value("${jwt.expiration:3600000}")
+    private long jwtExpiration;
 
     /**
      * 分页查询用户列表
@@ -100,6 +111,38 @@ public class SysUserController {
         user.setId(id);
         user.setStatus(status);
         boolean success = sysUserService.updateById(user);
+        // 禁用用户时，强制下线该用户的所有Token
+        if (success && status == 0) {
+            SysUser existingUser = sysUserService.getById(id);
+            if (existingUser != null) {
+                tokenBlacklistService.revokeAllUserTokens(
+                        existingUser.getUsername(),
+                        System.currentTimeMillis(),
+                        jwtExpiration
+                );
+            }
+        }
         return success ? Result.success("操作成功") : Result.error("操作失败");
+    }
+
+    /**
+     * 强制下线指定用户
+     * 将该用户的所有Token加入黑名单，需要重新登录
+     *
+     * @param id 用户ID
+     * @return 操作结果
+     */
+    @PostMapping("/{id}/force-logout")
+    public Result<String> forceLogout(@PathVariable Long id) {
+        SysUser user = sysUserService.getById(id);
+        if (user == null) {
+            return Result.error("用户不存在");
+        }
+        tokenBlacklistService.revokeAllUserTokens(
+                user.getUsername(),
+                System.currentTimeMillis(),
+                jwtExpiration
+        );
+        return Result.success("已强制下线用户：" + user.getUsername());
     }
 }

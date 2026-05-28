@@ -14,6 +14,11 @@ import org.springframework.stereotype.Component;
  * gRPC服务端租户拦截器
  * 从gRPC Metadata中提取租户ID（x-tenant-id）和JWT令牌（authorization），
  * 设置到TenantContextHolder线程上下文中，确保后续业务逻辑和MyBatis-Plus租户插件可获取租户信息
+ * <p><b>安全机制</b>：检查x-tenant-verified Metadata判断租户ID来源是否可信
+ * <ul>
+ *   <li>x-tenant-verified=true：租户ID由网关从JWT Claims中验证（可信），正常设置上下文</li>
+ *   <li>x-tenant-verified不存在：租户ID可能来自客户端直接调用（不可信），记录安全警告</li>
+ * </ul>
  * <p>替代原 TenantIdentificationFilter 对gRPC请求的处理
  * <p>优先级：最高（@Order(Ordered.HIGHEST_PRECEDENCE)），确保所有业务拦截器执行前租户上下文已就绪
  * <p><b>重要</b>：finally块中清理TenantContextHolder，防止ThreadLocal内存泄漏
@@ -37,6 +42,12 @@ public class GrpcServerTenantInterceptor implements ServerInterceptor {
     private static final Metadata.Key<String> AUTHORIZATION_KEY =
             Metadata.Key.of("authorization", Metadata.ASCII_STRING_MARSHALLER);
 
+    /**
+     * gRPC Metadata Key：租户ID验证标记（由GrpcClientInterceptor从网关X-Tenant-Verified透传）
+     */
+    private static final Metadata.Key<String> TENANT_VERIFIED_KEY =
+            Metadata.Key.of("x-tenant-verified", Metadata.ASCII_STRING_MARSHALLER);
+
     private static final String DEFAULT_TENANT_ID = "default_tenant";
 
     @Override
@@ -56,7 +67,15 @@ public class GrpcServerTenantInterceptor implements ServerInterceptor {
                 TenantContextHolder.setCurrentTenantId(DEFAULT_TENANT_ID);
             }
 
-            log.debug("gRPC服务端租户拦截器：设置租户上下文 tenantId={}", TenantContextHolder.getCurrentTenantId());
+            // 安全检查：验证租户ID来源是否可信
+            String verified = headers.get(TENANT_VERIFIED_KEY);
+            if (!"true".equals(verified)) {
+                // 租户ID未经JWT验证，可能表示gRPC调用绕过了网关
+                log.warn("安全警告：gRPC租户ID未经JWT验证，可能绕过了网关。tenantId={}, method={}",
+                        TenantContextHolder.getCurrentTenantId(), call.getMethodDescriptor().getFullMethodName());
+            } else {
+                log.debug("gRPC服务端租户拦截器：租户ID已验证 tenantId={}", TenantContextHolder.getCurrentTenantId());
+            }
 
             return next.startCall(call, headers);
 

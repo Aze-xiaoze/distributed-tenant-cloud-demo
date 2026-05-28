@@ -8,6 +8,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -20,7 +22,9 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import javax.crypto.SecretKey;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * tenant-system 服务的JWT认证过滤器
@@ -34,9 +38,16 @@ import java.util.Collections;
 @Component
 public class SystemJwtAuthFilter extends OncePerRequestFilter {
 
+    private static final Logger log = LoggerFactory.getLogger(SystemJwtAuthFilter.class);
+
     private static final String AUTHORIZATION_HEADER = "Authorization";
     private static final String BEARER_PREFIX = "Bearer ";
     private static final String TENANT_HEADER_NAME = "X-Tenant-ID";
+
+    /**
+     * 租户ID来源验证标记头（由网关AuthGatewayFilter设置）
+     */
+    private static final String TENANT_VERIFIED_HEADER = "X-Tenant-Verified";
 
     @Value("${jwt.secret:defaultSecretKeyForTenantCloudPlatformThatIsAtLeast64BytesLongForHS512}")
     private String secret;
@@ -60,16 +71,49 @@ public class SystemJwtAuthFilter extends OncePerRequestFilter {
                 String tenantId = claims.get("tenantId", String.class);
 
                 if (username != null) {
-                    // 设置租户上下文
+                    // 设置租户上下文（JWT中的租户ID为可信来源）
                     if (tenantId != null) {
                         TenantContextHolder.setCurrentTenantId(tenantId);
+                    } else {
+                        // JWT中无租户ID，从请求头获取并检查来源
+                        String headerTenantId = request.getHeader(TENANT_HEADER_NAME);
+                        if (headerTenantId != null && !headerTenantId.trim().isEmpty()) {
+                            String verified = request.getHeader(TENANT_VERIFIED_HEADER);
+                            if (!"true".equals(verified)) {
+                                log.warn("安全警告：JWT中无租户ID，且请求头租户ID未经验证。tenantId={}, path={}",
+                                        headerTenantId, request.getRequestURI());
+                            }
+                            TenantContextHolder.setCurrentTenantId(headerTenantId);
+                        }
                     }
 
-                    // 设置Security上下文
+                    // 设置Security上下文（从JWT提取角色和权限）
+                    @SuppressWarnings("unchecked")
+                    List<String> roles = claims.get("roles", List.class);
+                    @SuppressWarnings("unchecked")
+                    List<String> permissions = claims.get("permissions", List.class);
+                    List<SimpleGrantedAuthority> authorities = new ArrayList<>();
+                    // 添加角色（ROLE_前缀，供@PreAuthorize("hasRole('XXX')")使用）
+                    if (roles != null) {
+                        authorities.addAll(roles.stream()
+                                .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
+                                .collect(Collectors.toList()));
+                    }
+                    // 添加权限标识（供@RequiresPermission和@PreAuthorize("hasAuthority('XXX')")使用）
+                    if (permissions != null) {
+                        authorities.addAll(permissions.stream()
+                                .map(SimpleGrantedAuthority::new)
+                                .collect(Collectors.toList()));
+                    }
+                    // 如果JWT中无角色和权限，默认赋予ROLE_USER
+                    if (authorities.isEmpty()) {
+                        authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
+                    }
+
                     UsernamePasswordAuthenticationToken authentication =
                             new UsernamePasswordAuthenticationToken(
                                     username, null,
-                                    Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"))
+                                    authorities
                             );
                     authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authentication);
@@ -78,6 +122,12 @@ public class SystemJwtAuthFilter extends OncePerRequestFilter {
                 // 从请求头获取租户ID（网关转发过来的）
                 String headerTenantId = request.getHeader(TENANT_HEADER_NAME);
                 if (headerTenantId != null && !headerTenantId.trim().isEmpty()) {
+                    // 检查租户ID来源是否由网关验证
+                    String verified = request.getHeader(TENANT_VERIFIED_HEADER);
+                    if (!"true".equals(verified)) {
+                        log.warn("安全警告：未认证请求的租户ID未经JWT验证，可能绕过了网关。tenantId={}, path={}",
+                                headerTenantId, request.getRequestURI());
+                    }
                     TenantContextHolder.setCurrentTenantId(headerTenantId);
                 }
             }

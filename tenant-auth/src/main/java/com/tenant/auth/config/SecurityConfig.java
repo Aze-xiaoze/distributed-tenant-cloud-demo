@@ -64,7 +64,7 @@ public class SecurityConfig {
             // 配置请求授权规则
             .authorizeHttpRequests(auth -> auth
                 // 允许访问登录和注册接口
-                .requestMatchers("/auth/login", "/auth/register", "/auth/validate-token").permitAll()
+                .requestMatchers("/auth/login", "/auth/register", "/auth/validate-token", "/auth/logout").permitAll()
                 // 允许访问健康检查和监控接口
                 .requestMatchers("/actuator/**").permitAll()
                 // 其他所有请求都需要认证

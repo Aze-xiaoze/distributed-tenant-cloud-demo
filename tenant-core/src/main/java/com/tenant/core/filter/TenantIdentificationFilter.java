@@ -1,6 +1,8 @@
 package com.tenant.core.filter;
 
 import com.tenant.core.tenant.TenantContextHolder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import jakarta.servlet.*;
@@ -12,6 +14,12 @@ import java.io.IOException;
  * 从HTTP请求头中提取租户ID（X-Tenant-ID），设置到 {@link TenantContextHolder} 线程上下文中
  * <p>此过滤器作为Servlet Filter自动注册，在所有请求处理前执行，
  * 为后续的MyBatis-Plus多租户插件、业务代码提供租户上下文
+ * <p><b>安全机制</b>：检查X-Tenant-Verified请求头判断租户ID来源
+ * <ul>
+ *   <li>X-Tenant-Verified=true：租户ID由网关从JWT Claims中提取（可信），正常设置上下文</li>
+ *   <li>X-Tenant-Verified不存在：租户ID可能来自客户端请求头（不可信），记录安全警告，
+ *       可能表示请求绕过了网关直接访问下游服务</li>
+ * </ul>
  * <p>与 {@code JwtAuthenticationFilter} 的关系：
  * <ul>
  *   <li>本过滤器从请求头提取租户ID — 适用于未携带JWT的公开接口（如登录/注册）</li>
@@ -24,14 +32,21 @@ import java.io.IOException;
 @Component
 public class TenantIdentificationFilter implements Filter {
 
+    private static final Logger log = LoggerFactory.getLogger(TenantIdentificationFilter.class);
+
     /**
      * 租户ID请求头名称
      */
     private static final String TENANT_HEADER_NAME = "X-Tenant-ID";
 
     /**
+     * 租户ID来源验证标记头（由网关AuthGatewayFilter设置）
+     */
+    private static final String TENANT_VERIFIED_HEADER = "X-Tenant-Verified";
+
+    /**
      * 执行过滤逻辑
-     * 从请求头中提取租户ID并设置到上下文中
+     * 从请求头中提取租户ID并设置到上下文中，同时检查租户ID来源是否可信
      *
      * @param request  请求对象
      * @param response 响应对象
@@ -50,6 +65,13 @@ public class TenantIdentificationFilter implements Filter {
             String tenantId = httpRequest.getHeader(TENANT_HEADER_NAME);
             
             if (tenantId != null && !tenantId.trim().isEmpty()) {
+                // 安全检查：验证租户ID来源
+                String verified = httpRequest.getHeader(TENANT_VERIFIED_HEADER);
+                if (!"true".equals(verified)) {
+                    // 租户ID未经JWT验证，可能表示请求绕过了网关
+                    log.warn("安全警告：租户ID未经JWT验证，可能绕过了网关。tenantId={}, path={}",
+                            tenantId, httpRequest.getRequestURI());
+                }
                 // 设置租户ID到上下文
                 TenantContextHolder.setCurrentTenantId(tenantId);
             }

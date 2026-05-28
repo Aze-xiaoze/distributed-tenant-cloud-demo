@@ -6,6 +6,14 @@ spring:
     name: tenant-gateway
   profiles:
     active: dev
+  # Redis配置（网关需要访问Redis检查Token黑名单）
+  data:
+    redis:
+      host: ${REDIS_HOST:127.0.0.1}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      database: 0
+      timeout: 5000ms
   cloud:
     gateway:
       # 路由配置

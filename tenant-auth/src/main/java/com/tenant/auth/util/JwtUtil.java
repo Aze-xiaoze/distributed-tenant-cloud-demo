@@ -9,14 +9,17 @@ import org.springframework.stereotype.Component;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.List;
+import java.util.UUID;
 
 /**
  * JWT工具类
- * 提供JWT令牌的生成、解析和验证功能，支持在令牌中携带租户ID
+ * 提供JWT令牌的生成、解析和验证功能，支持在令牌中携带租户ID和角色列表
  * <p>算法：HS512（HMAC-SHA512），密钥至少需64字节
  * <p>令牌结构：
  * <ul>
  *   <li>sub(Subject) — 用户名</li>
+ *   <li>jti(JWT ID) — 唯一标识（UUID），用于Token吊销和防重放攻击</li>
  *   <li>tenantId(Custom Claim) — 租户ID</li>
  *   <li>iat(Issued At) — 签发时间</li>
  *   <li>exp(Expiration) — 过期时间</li>
@@ -67,6 +70,55 @@ public class JwtUtil {
     }
 
     /**
+     * 从令牌中获取JWT唯一标识（jti）
+     * <p>jti用于Token吊销和防重放攻击
+     *
+     * @param token 令牌
+     * @return JWT唯一标识
+     */
+    public String getJtiFromToken(String token) {
+        Claims claims = getClaimsFromToken(token);
+        return claims.getId();
+    }
+
+    /**
+     * 从令牌中获取签发时间（毫秒时间戳）
+     * <p>用于用户全量Token吊销时判断Token是否在吊销时间点之前签发
+     *
+     * @param token 令牌
+     * @return 签发时间的毫秒时间戳
+     */
+    public long getIssuedAtMillisFromToken(String token) {
+        Claims claims = getClaimsFromToken(token);
+        Date issuedAt = claims.getIssuedAt();
+        return issuedAt != null ? issuedAt.getTime() : 0;
+    }
+
+    /**
+     * 从令牌中获取角色列表
+     *
+     * @param token 令牌
+     * @return 角色编码列表
+     */
+    @SuppressWarnings("unchecked")
+    public List<String> getRolesFromToken(String token) {
+        Claims claims = getClaimsFromToken(token);
+        return claims.get("roles", List.class);
+    }
+
+    /**
+     * 从令牌中获取权限标识列表
+     *
+     * @param token 令牌
+     * @return 权限标识列表
+     */
+    @SuppressWarnings("unchecked")
+    public List<String> getPermissionsFromToken(String token) {
+        Claims claims = getClaimsFromToken(token);
+        return claims.get("permissions", List.class);
+    }
+
+    /**
      * 从令牌中获取过期日期
      *
      * @param token 令牌
@@ -103,23 +155,40 @@ public class JwtUtil {
     }
 
     /**
-     * 生成令牌（包含用户名和租户ID）
+     * 生成令牌（包含用户名、租户ID、角色和权限标识）
+     * <p>jti（JWT ID）使用UUID生成，用于Token吊销和防重放攻击
+     *
+     * @param username    用户名
+     * @param tenantId    租户ID
+     * @param roles       角色编码列表
+     * @param permissions 权限标识列表
+     * @return 令牌
+     */
+    public String generateToken(String username, String tenantId, List<String> roles, List<String> permissions) {
+        Date createdDate = new Date();
+        Date expirationDate = new Date(createdDate.getTime() + jwtProperties.getExpiration());
+
+        return Jwts.builder()
+                .setSubject(username)
+                .setId(UUID.randomUUID().toString()) // jti：唯一标识，用于Token吊销
+                .claim("tenantId", tenantId)
+                .claim("roles", roles != null ? roles : List.of())
+                .claim("permissions", permissions != null ? permissions : List.of())
+                .setIssuedAt(createdDate)
+                .setExpiration(expirationDate)
+                .signWith(getSigningKey())
+                .compact();
+    }
+
+    /**
+     * 生成令牌（兼容旧接口，不含角色权限）
      *
      * @param username 用户名
      * @param tenantId 租户ID
      * @return 令牌
      */
     public String generateToken(String username, String tenantId) {
-        Date createdDate = new Date();
-        Date expirationDate = new Date(createdDate.getTime() + jwtProperties.getExpiration());
-
-        return Jwts.builder()
-                .setSubject(username)
-                .claim("tenantId", tenantId)
-                .setIssuedAt(createdDate)
-                .setExpiration(expirationDate)
-                .signWith(getSigningKey())
-                .compact();
+        return generateToken(username, tenantId, List.of(), List.of());
     }
 
     /**

@@ -1,5 +1,6 @@
 package com.tenant.system.config;
 
+import com.tenant.common.security.SecurityResponseUtil;
 import com.tenant.system.filter.SystemJwtAuthFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -42,6 +43,11 @@ public class SystemSecurityConfig {
                 // 允许访问Knife4j接口文档相关路径
                 .requestMatchers("/doc.html", "/webjars/**", "/v3/api-docs/**", "/swagger-resources/**", "/favicon.ico").permitAll()
                 .anyRequest().authenticated()
+            )
+            // 配置异常处理（复用统一响应工具类）
+            .exceptionHandling(exceptions -> exceptions
+                .authenticationEntryPoint(SecurityResponseUtil.unauthorizedEntryPoint())
+                .accessDeniedHandler(SecurityResponseUtil.accessDeniedHandler())
             )
             .addFilterBefore(systemJwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 

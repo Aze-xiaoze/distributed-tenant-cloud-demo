@@ -1,6 +1,7 @@
 package com.tenant.auth.config;
 
 import com.tenant.auth.filter.JwtAuthenticationFilter;
+import com.tenant.common.security.SecurityResponseUtil;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -72,20 +73,10 @@ public class SecurityConfig {
                 // 其他所有请求都需要认证
                 .anyRequest().authenticated()
             )
-            // 配置异常处理
+            // 配置异常处理（复用统一响应工具类）
             .exceptionHandling(exceptions -> exceptions
-                // 未认证处理
-                .authenticationEntryPoint((request, response, authException) -> {
-                    response.setContentType("application/json;charset=UTF-8");
-                    response.setStatus(401);
-                    response.getWriter().write("{\"code\":401,\"message\":\"未认证，请先登录\",\"timestamp\":" + System.currentTimeMillis() + "}");
-                })
-                // 无权限处理
-                .accessDeniedHandler((request, response, accessDeniedException) -> {
-                    response.setContentType("application/json;charset=UTF-8");
-                    response.setStatus(403);
-                    response.getWriter().write("{\"code\":403,\"message\":\"无权限访问\",\"timestamp\":" + System.currentTimeMillis() + "}");
-                })
+                .authenticationEntryPoint(SecurityResponseUtil.unauthorizedEntryPoint())
+                .accessDeniedHandler(SecurityResponseUtil.accessDeniedHandler())
             )
             // 在UsernamePasswordAuthenticationFilter之前插入JWT过滤器
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

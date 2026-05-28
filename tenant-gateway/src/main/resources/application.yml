@@ -113,6 +113,12 @@ jwt:
   secret: defaultSecretKeyForTenantCloudPlatformThatIsAtLeast64BytesLongForHS512
   expiration: 1800000
 
+# Swagger/Knife4j 访问控制配置
+# 生产环境建议关闭（enabled: false）或通过网关白名单IP限制
+swagger:
+  enabled: ${SWAGGER_ENABLED:true}
+  allowed-ips: ${SWAGGER_ALLOWED_IPS:}
+
 # Actuator 健康检查与监控端点配置
 management:
   endpoints:

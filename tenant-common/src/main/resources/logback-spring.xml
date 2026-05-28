@@ -3,8 +3,9 @@
     <!-- 引入SkyWalking日志工具包 -->
     <include resource="org/apache/skywalking/apm/toolkit/log/logback/v1.x/logback-toolkit.xml"/>
 
-    <!-- 定义日志文件存储路径 -->
-    <property name="LOG_HOME" value="./logs"/>
+    <!-- 定义日志文件存储路径（可从 application.yml 中配置 logging.file.path 覆盖） -->
+    <!-- 默认值：./logs（相对路径，容器化部署时建议通过环境变量或配置文件指定绝对路径） -->
+    <springProperty scope="context" name="LOG_HOME" source="logging.file.path" defaultValue="./logs"/>
 
     <!-- 控制台输出 -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">

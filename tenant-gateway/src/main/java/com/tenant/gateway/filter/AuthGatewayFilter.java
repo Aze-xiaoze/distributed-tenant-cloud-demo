@@ -174,7 +174,8 @@ public class AuthGatewayFilter implements GlobalFilter, Ordered {
 
     @Override
     public int getOrder() {
-        // 最高优先级，在租户过滤器之前执行，确保已认证请求的租户ID由JWT签名保障
-        return Ordered.HIGHEST_PRECEDENCE;
+        // 次高优先级，确保在 TraceId 过滤器之后执行（TraceId=HIGHEST_PRECEDENCE）
+        // 这样认证日志中也能关联到 TraceId
+        return Ordered.HIGHEST_PRECEDENCE + 1;
     }
 }

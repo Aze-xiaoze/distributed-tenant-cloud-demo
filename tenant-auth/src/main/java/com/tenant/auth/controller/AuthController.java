@@ -18,7 +18,10 @@ import com.tenant.core.tenant.TenantContextHolder;
 import com.tenant.core.tenant.TenantValidator;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -39,32 +42,40 @@ import java.util.Map;
 @RequestMapping("/auth")
 public class AuthController {
 
-    @Autowired
-    private UserService userService;
+    private static final Logger log = LoggerFactory.getLogger(AuthController.class);
 
-    @Autowired
-    private JwtUtil jwtUtil;
+    private final UserService userService;
+    private final JwtUtil jwtUtil;
+    private final JwtProperties jwtProperties;
+    private final TokenBlacklistService tokenBlacklistService;
+    private final RefreshTokenService refreshTokenService;
+    private final LoginLogService loginLogService;
+    private final TenantInfoMapper tenantInfoMapper;
+    private final TenantValidator tenantValidator;
+    private final RolePermissionMapper rolePermissionMapper;
+    private final StringRedisTemplate redisTemplate;
 
-    @Autowired
-    private JwtProperties jwtProperties;
-
-    @Autowired
-    private TokenBlacklistService tokenBlacklistService;
-
-    @Autowired
-    private RefreshTokenService refreshTokenService;
-
-    @Autowired
-    private LoginLogService loginLogService;
-
-    @Autowired
-    private TenantInfoMapper tenantInfoMapper;
-
-    @Autowired
-    private TenantValidator tenantValidator;
-
-    @Autowired
-    private RolePermissionMapper rolePermissionMapper;
+    public AuthController(UserService userService,
+                          JwtUtil jwtUtil,
+                          JwtProperties jwtProperties,
+                          TokenBlacklistService tokenBlacklistService,
+                          RefreshTokenService refreshTokenService,
+                          LoginLogService loginLogService,
+                          TenantInfoMapper tenantInfoMapper,
+                          TenantValidator tenantValidator,
+                          RolePermissionMapper rolePermissionMapper,
+                          StringRedisTemplate redisTemplate) {
+        this.userService = userService;
+        this.jwtUtil = jwtUtil;
+        this.jwtProperties = jwtProperties;
+        this.tokenBlacklistService = tokenBlacklistService;
+        this.refreshTokenService = refreshTokenService;
+        this.loginLogService = loginLogService;
+        this.tenantInfoMapper = tenantInfoMapper;
+        this.tenantValidator = tenantValidator;
+        this.rolePermissionMapper = rolePermissionMapper;
+        this.redisTemplate = redisTemplate;
+    }
 
     /**
      * 用户登录
@@ -305,37 +316,51 @@ public class AuthController {
                 return Result.error(401, "RefreshToken已过期，请重新登录");
             }
 
-            // 2. 验证RefreshToken在Redis中是否有效
-            String validatedUsername = refreshTokenService.validateRefreshToken(refreshToken);
-            if (validatedUsername == null) {
-                return Result.error(401, "RefreshToken无效或已被吊销，请重新登录");
+            // 2. 并发保护：防止同一RefreshToken被并发使用（旋转机制下并发会导致Token失效）
+            String jti = jwtUtil.getJtiFromToken(refreshToken);
+            String lockKey = "refresh_token_lock:" + jti;
+            Boolean locked = redisTemplate.opsForValue().setIfAbsent(lockKey, "1", 10, java.util.concurrent.TimeUnit.SECONDS);
+            if (Boolean.FALSE.equals(locked)) {
+                log.warn("RefreshToken正在被使用（并发刷新），username={}", username);
+                return Result.error(429, "刷新令牌正在使用，请稍后重试");
             }
 
-            // 3. 重新查询用户信息和角色权限
-            User user = userService.getUserByUsername(validatedUsername);
-            if (user == null || user.getStatus() != 1) {
-                return Result.error(401, "用户不存在或已被禁用");
+            try {
+                // 3. 验证RefreshToken在Redis中是否有效
+                String validatedUsername = refreshTokenService.validateRefreshToken(refreshToken);
+                if (validatedUsername == null) {
+                    return Result.error(401, "RefreshToken无效或已被吊销，请重新登录");
+                }
+
+                // 4. 重新查询用户信息和角色权限
+                User user = userService.getUserByUsername(validatedUsername);
+                if (user == null || user.getStatus() != 1) {
+                    return Result.error(401, "用户不存在或已被禁用");
+                }
+
+                List<String> roles = rolePermissionMapper.selectRoleCodesByUserId(user.getId());
+                List<String> permissions = rolePermissionMapper.selectPermissionsByUserId(user.getId());
+
+                // 5. 生成新的AccessToken和RefreshToken（旋转机制：每次刷新都生成新RefreshToken）
+                String newAccessToken = jwtUtil.generateToken(user.getUsername(), user.getTenantId(), roles, permissions);
+                String newRefreshToken = jwtUtil.generateRefreshToken(user.getUsername(), user.getTenantId());
+                refreshTokenService.storeRefreshToken(user.getUsername(), newRefreshToken, jwtProperties.getRefreshExpiration());
+
+                Map<String, Object> data = new HashMap<>();
+                data.put("token", newAccessToken);
+                data.put("refreshToken", newRefreshToken);
+                data.put("tokenExpiresIn", jwtProperties.getExpiration() / 1000);
+                data.put("refreshExpiresIn", jwtProperties.getRefreshExpiration() / 1000);
+                data.put("tenantId", user.getTenantId());
+                data.put("username", user.getUsername());
+                data.put("roles", roles);
+                data.put("permissions", permissions);
+
+                return Result.success("刷新成功", data);
+            } finally {
+                // 释放并发锁
+                redisTemplate.delete(lockKey);
             }
-
-            List<String> roles = rolePermissionMapper.selectRoleCodesByUserId(user.getId());
-            List<String> permissions = rolePermissionMapper.selectPermissionsByUserId(user.getId());
-
-            // 4. 生成新的AccessToken和RefreshToken（旋转机制：每次刷新都生成新RefreshToken）
-            String newAccessToken = jwtUtil.generateToken(user.getUsername(), user.getTenantId(), roles, permissions);
-            String newRefreshToken = jwtUtil.generateRefreshToken(user.getUsername(), user.getTenantId());
-            refreshTokenService.storeRefreshToken(user.getUsername(), newRefreshToken, jwtProperties.getRefreshExpiration());
-
-            Map<String, Object> data = new HashMap<>();
-            data.put("token", newAccessToken);
-            data.put("refreshToken", newRefreshToken);
-            data.put("tokenExpiresIn", jwtProperties.getExpiration() / 1000);
-            data.put("refreshExpiresIn", jwtProperties.getRefreshExpiration() / 1000);
-            data.put("tenantId", user.getTenantId());
-            data.put("username", user.getUsername());
-            data.put("roles", roles);
-            data.put("permissions", permissions);
-
-            return Result.success("刷新成功", data);
 
         } catch (Exception e) {
             return Result.error(401, "RefreshToken刷新失败：" + e.getMessage());

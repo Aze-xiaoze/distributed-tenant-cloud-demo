@@ -1,5 +1,6 @@
 package com.tenant.core.security;
 
+import com.tenant.common.enums.ErrorCode;
 import com.tenant.common.exception.BusinessException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -99,7 +100,7 @@ public class PermissionAspect {
             log.warn("权限校验失败：username={}, required={}, actual={}, method={}",
                     username, Arrays.toString(requiredPermissions), userPermissions,
                     method.getName());
-            throw new BusinessException(403, "无权限访问，需要权限：" + String.join(",", requiredPermissions));
+            throw new BusinessException(ErrorCode.PERMISSION_DENIED, "无权限访问，需要权限：" + String.join(",", requiredPermissions));
         }
 
         return joinPoint.proceed();

@@ -1,10 +1,13 @@
 package com.tenant.core.config;
 
+import org.slf4j.MDC;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
+import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadPoolExecutor;
 
@@ -35,6 +38,8 @@ public class AsyncConfig {
         executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
         executor.setWaitForTasksToCompleteOnShutdown(true);
         executor.setAwaitTerminationSeconds(60);
+        // 添加 MDC 上下文传递（确保异步线程中能获取 TraceId、租户ID等链路信息）
+        executor.setTaskDecorator(new MdcTaskDecorator());
         executor.initialize();
         return executor;
     }
@@ -53,7 +58,35 @@ public class AsyncConfig {
         executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
         executor.setWaitForTasksToCompleteOnShutdown(true);
         executor.setAwaitTerminationSeconds(60);
+        // 添加 MDC 上下文传递（确保异步线程中能获取 TraceId、租户ID等链路信息）
+        executor.setTaskDecorator(new MdcTaskDecorator());
         executor.initialize();
         return executor;
+    }
+
+    /**
+     * MDC 上下文传递装饰器
+     * <p>解决异步线程无法继承主线程 MDC 上下文的问题（TraceId、租户ID等）
+     * <p>原理：在任务提交时捕获主线程 MDC，在异步线程执行时恢复，执行完毕后清理
+     */
+    private static class MdcTaskDecorator implements org.springframework.core.task.TaskDecorator {
+        @Override
+        public Runnable decorate(Runnable runnable) {
+            // 在主线程中捕获 MDC 上下文
+            Map<String, String> contextMap = MDC.getCopyOfContextMap();
+            return () -> {
+                try {
+                    // 在异步线程中恢复 MDC 上下文
+                    if (contextMap != null) {
+                        MDC.setContextMap(contextMap);
+                    }
+                    // 执行实际任务
+                    runnable.run();
+                } finally {
+                    // 清理异步线程的 MDC，防止线程池复用时的数据污染
+                    MDC.clear();
+                }
+            };
+        }
     }
 }

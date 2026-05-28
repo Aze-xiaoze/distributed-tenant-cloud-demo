@@ -114,11 +114,14 @@ springdoc:
 # Knife4j增强配置
 knife4j:
   enable: true
+  # 生产环境建议开启基础认证（防止API文档泄露）
+  basic:
+    enable: ${KNIFE4J_BASIC_AUTH_ENABLED:false}
+    username: ${KNIFE4J_BASIC_AUTH_USERNAME:admin}
+    password: ${KNIFE4J_BASIC_AUTH_PASSWORD:admin123}
   setting:
     language: zh_cn
     enable-version: true
-  basic:
-    enable: false
 
 # Actuator 健康检查与监控端点配置
 management:
@@ -136,6 +139,9 @@ management:
     livenessstate:
       enabled: true
     readinessstate:
+      enabled: true
+    # 数据库健康检查配置（显示连接池详细信息）
+    db:
       enabled: true
   metrics:
     tags:

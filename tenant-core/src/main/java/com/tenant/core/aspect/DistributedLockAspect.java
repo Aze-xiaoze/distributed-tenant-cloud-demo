@@ -1,6 +1,7 @@
 package com.tenant.core.aspect;
 
 import com.tenant.common.annotation.DistributedLock;
+import com.tenant.common.enums.ErrorCode;
 import com.tenant.common.exception.BusinessException;
 import com.tenant.common.util.SpELUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -62,7 +63,7 @@ public class DistributedLockAspect {
         boolean locked = tryLock(lockKey, lockValue, expireTime, waitTime);
         if (!locked) {
             log.warn("获取分布式锁失败: key={}", lockKey);
-            throw new BusinessException("系统繁忙，请稍后重试");
+            throw new BusinessException(ErrorCode.DISTRIBUTED_LOCK_FAILED);
         }
 
         try {

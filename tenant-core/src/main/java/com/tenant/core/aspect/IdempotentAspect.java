@@ -1,6 +1,7 @@
 package com.tenant.core.aspect;
 
 import com.tenant.common.annotation.Idempotent;
+import com.tenant.common.enums.ErrorCode;
 import com.tenant.common.exception.BusinessException;
 import com.tenant.common.util.SpELUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -53,7 +54,7 @@ public class IdempotentAspect {
 
         if (Boolean.FALSE.equals(result)) {
             log.warn("幂等性校验失败（重复请求）: key={}", key);
-            throw new BusinessException(idempotent.message());
+            throw new BusinessException(ErrorCode.IDEMPOTENT_FAILED, idempotent.message());
         }
 
         log.debug("幂等性校验通过: key={}, expireTime={}s", key, expireTime);

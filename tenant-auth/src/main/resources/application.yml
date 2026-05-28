@@ -79,7 +79,8 @@ mybatis-plus:
   mapper-locations: classpath*:/mapper/**/*.xml
   configuration:
     map-underscore-to-camel-case: true
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    # 生产环境使用 SLF4J 日志框架，通过日志级别控制 SQL 输出（避免 StdOutImpl 性能损耗和数据泄露）
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
 
 # JWT配置（与网关、系统服务保持一致）
 jwt:

@@ -131,10 +131,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
 
             filterChain.doFilter(request, response);
-        } finally {
-            // 请求结束后清理租户上下文，防止内存泄漏
-            TenantContextHolder.clear();
+        } catch (ServletException | IOException e) {
+            // 异常由全局异常处理器处理，此处直接抛出
+            throw e;
         }
+        // 注意：TenantContextHolder.clear() 已由 TenantIdentificationFilter 统一清理，此处不再重复清理
     }
 
     /**

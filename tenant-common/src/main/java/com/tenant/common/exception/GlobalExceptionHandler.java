@@ -73,6 +73,7 @@ public class GlobalExceptionHandler {
 
     /**
      * 处理业务异常
+     * <p>使用 BusinessException 的自定义错误码（如果有），否则使用默认400
      *
      * @param e 业务异常对象
      * @return 错误响应结果
@@ -80,7 +81,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BusinessException.class)
     public Result<Object> handleBusinessException(BusinessException e) {
         logger.error("业务异常: {}", e.getMessage());
-        return Result.fail(e.getMessage());
+        return Result.error(e.getCode(), e.getMessage());
     }
 
     /**

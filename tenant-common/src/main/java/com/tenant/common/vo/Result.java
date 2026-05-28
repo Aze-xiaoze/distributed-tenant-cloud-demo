@@ -1,5 +1,7 @@
 package com.tenant.common.vo;
 
+import lombok.Data;
+
 import java.io.Serializable;
 
 /**
@@ -17,6 +19,7 @@ import java.io.Serializable;
  * @param <T> 响应数据类型
  * @author Aze
  */
+@Data
 public class Result<T> implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -127,38 +130,5 @@ public class Result<T> implements Serializable {
      */
     public static <T> Result<T> fail(String message) {
         return new Result<>(400, message);
-    }
-
-    // getter和setter方法
-    public Integer getCode() {
-        return code;
-    }
-
-    public void setCode(Integer code) {
-        this.code = code;
-    }
-
-    public String getMessage() {
-        return message;
-    }
-
-    public void setMessage(String message) {
-        this.message = message;
-    }
-
-    public T getData() {
-        return data;
-    }
-
-    public void setData(T data) {
-        this.data = data;
-    }
-
-    public Long getTimestamp() {
-        return timestamp;
-    }
-
-    public void setTimestamp(Long timestamp) {
-        this.timestamp = timestamp;
     }
 }

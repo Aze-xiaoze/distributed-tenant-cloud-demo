@@ -20,6 +20,8 @@ import java.io.IOException;
  *   <li>X-Tenant-Verified不存在：租户ID可能来自客户端请求头（不可信），记录安全警告，
  *       可能表示请求绕过了网关直接访问下游服务</li>
  * </ul>
+ * <p><b>ThreadLocal清理责任</b>：本过滤器是唯一负责清理TenantContextHolder的地方，
+ * 其他过滤器（如JwtAuthenticationFilter）只负责设置，不清理，避免重复清理导致后续代码取不到值
  * <p>与 {@code JwtAuthenticationFilter} 的关系：
  * <ul>
  *   <li>本过滤器从请求头提取租户ID — 适用于未携带JWT的公开接口（如登录/注册）</li>

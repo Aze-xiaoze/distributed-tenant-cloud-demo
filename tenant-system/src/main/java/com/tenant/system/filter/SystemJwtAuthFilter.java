@@ -124,9 +124,11 @@ public class SystemJwtAuthFilter extends OncePerRequestFilter {
             }
 
             filterChain.doFilter(request, response);
-        } finally {
-            TenantContextHolder.clear();
+        } catch (ServletException | IOException e) {
+            // 异常由全局异常处理器处理，此处直接抛出
+            throw e;
         }
+        // 注意：TenantContextHolder.clear() 已由 TenantIdentificationFilter 统一清理，此处不再重复清理
     }
 
     private String extractToken(HttpServletRequest request) {

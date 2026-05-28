@@ -3,6 +3,7 @@ package com.tenant.core.config;
 import com.baomidou.mybatisplus.annotation.DbType;
 import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.BlockAttackInnerInterceptor;
+import com.baomidou.mybatisplus.extension.plugins.inner.OptimisticLockerInnerInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.PaginationInnerInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.TenantLineInnerInterceptor;
 import com.tenant.core.tenant.TenantContextHolder;
@@ -91,10 +92,13 @@ public class MybatisPlusConfig {
             }
         }));
 
-        // 2. 分页插件
+        // 2. 乐观锁插件 — 防止并发更新数据覆盖（实体需添加 @Version 字段）
+        interceptor.addInnerInterceptor(new OptimisticLockerInnerInterceptor());
+
+        // 3. 分页插件
         interceptor.addInnerInterceptor(new PaginationInnerInterceptor(DbType.MYSQL));
 
-        // 3. 防全表更新删除插件 — 阻止没有WHERE条件的UPDATE/DELETE
+        // 4. 防全表更新删除插件 — 阻止没有WHERE条件的UPDATE/DELETE
         interceptor.addInnerInterceptor(new BlockAttackInnerInterceptor());
 
         return interceptor;

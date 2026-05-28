@@ -1,6 +1,8 @@
 package com.tenant.common.exception;
 
 import com.tenant.common.vo.Result;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.validation.FieldError;
@@ -84,6 +86,23 @@ public class GlobalExceptionHandler {
                 .map(FieldError::getDefaultMessage)
                 .collect(Collectors.joining("; "));
         logger.warn("参数校验失败: {}", errors);
+        return Result.fail("参数校验失败: " + errors);
+    }
+
+    /**
+     * 处理参数约束校验异常（@RequestParam / @PathVariable 上的校验注解触发）
+     * <p>当 Controller 类标注 {@code @Validated} 且方法参数使用 {@code @NotBlank}、{@code @Size} 等注解时，
+     * 校验失败会抛出此异常（区别于 {@link MethodArgumentNotValidException} 的 @RequestBody 校验）
+     *
+     * @param e 约束校验异常
+     * @return 错误响应结果
+     */
+    @ExceptionHandler(ConstraintViolationException.class)
+    public Result<Object> handleConstraintViolationException(ConstraintViolationException e) {
+        String errors = e.getConstraintViolations().stream()
+                .map(ConstraintViolation::getMessage)
+                .collect(Collectors.joining("; "));
+        logger.warn("参数约束校验失败: {}", errors);
         return Result.fail("参数校验失败: " + errors);
     }
 }

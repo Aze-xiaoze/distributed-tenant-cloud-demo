@@ -11,7 +11,7 @@
         <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
             <!-- SkyWalking Trace ID 输出 -->
             <layout class="org.apache.skywalking.apm.toolkit.log.logback.v1.x.TraceIdPatternLogbackLayout">
-                <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%traceId] [%thread] %-5level %logger{50} - %msg%n</pattern>
+                <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%traceId] [%X{requestId}] [%thread] %-5level %logger{50} - %msg%n</pattern>
             </layout>
         </encoder>
     </appender>
@@ -26,7 +26,7 @@
             <totalSizeCap>3GB</totalSizeCap>
         </rollingPolicy>
         <encoder>
-            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%traceId] [%thread] %-5level %logger{50} - %msg%n</pattern>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%traceId] [%X{requestId}] [%thread] %-5level %logger{50} - %msg%n</pattern>
         </encoder>
     </appender>
 
@@ -45,7 +45,7 @@
             <totalSizeCap>1GB</totalSizeCap>
         </rollingPolicy>
         <encoder>
-            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%traceId] [%thread] %-5level %logger{50} - %msg%n</pattern>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%traceId] [%X{requestId}] [%thread] %-5level %logger{50} - %msg%n</pattern>
         </encoder>
     </appender>
 
@@ -53,7 +53,7 @@
     <appender name="SW_OUT" class="org.apache.skywalking.apm.toolkit.log.logback.v1.x.log.GRPCLogClientAppender">
         <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
             <layout class="org.apache.skywalking.apm.toolkit.log.logback.v1.x.TraceIdPatternLogbackLayout">
-                <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%traceId] [%thread] %-5level %logger{50} - %msg%n</pattern>
+                <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%traceId] [%X{requestId}] [%thread] %-5level %logger{50} - %msg%n</pattern>
             </layout>
         </encoder>
     </appender>

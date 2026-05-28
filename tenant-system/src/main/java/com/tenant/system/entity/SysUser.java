@@ -52,4 +52,10 @@ public class SysUser implements TenantEntity, Serializable {
 
     @TableLogic
     private Integer deleted;
+
+    /**
+     * 乐观锁版本号
+     */
+    @Version
+    private Integer version;
 }

@@ -6,6 +6,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -19,7 +20,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * JWT认证过滤器
@@ -57,84 +57,79 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain) throws ServletException, IOException {
-        try {
-            // 1. 从请求头中提取JWT令牌
-            String token = extractToken(request);
+    protected void doFilterInternal(@NotNull HttpServletRequest request,
+                                    @NotNull HttpServletResponse response,
+                                    @NotNull FilterChain filterChain) throws ServletException, IOException {
+        // 1. 从请求头中提取JWT令牌
+        String token = extractToken(request);
 
-            if (token != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                // 2. 从令牌中提取用户名并验证
-                String username = jwtUtil.getUsernameFromToken(token);
+        if (token != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            // 2. 从令牌中提取用户名并验证
+            String username = jwtUtil.getUsernameFromToken(token);
 
-                if (username != null && jwtUtil.validateToken(token, username)) {
-                    // 3. 从令牌中提取租户ID并设置到租户上下文
-                    String tenantId = jwtUtil.getTenantIdFromToken(token);
-                    if (tenantId != null) {
-                        TenantContextHolder.setCurrentTenantId(tenantId);
-                    } else {
-                        // 如果令牌中没有租户ID，则从请求头中获取（仅当租户ID已由网关验证时）
-                        String headerTenantId = request.getHeader(TENANT_HEADER_NAME);
-                        String verified = request.getHeader(TENANT_VERIFIED_HEADER);
-                        if (headerTenantId != null && !headerTenantId.trim().isEmpty()) {
-                            if (!"true".equals(verified)) {
-                                log.warn("安全警告：JWT中无租户ID，且请求头租户ID未经验证。tenantId={}, path={}",
-                                        headerTenantId, request.getRequestURI());
-                            }
-                            TenantContextHolder.setCurrentTenantId(headerTenantId);
-                        }
-                    }
-
-                    // 4. 从JWT中提取角色和权限，设置Spring Security认证上下文
-                    List<String> roles = jwtUtil.getRolesFromToken(token);
-                    List<String> permissions = jwtUtil.getPermissionsFromToken(token);
-                    List<SimpleGrantedAuthority> authorities = new ArrayList<>();
-                    // 添加角色（ROLE_前缀，供@PreAuthorize("hasRole('XXX')")使用）
-                    if (roles != null) {
-                        authorities.addAll(roles.stream()
-                                .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
-                                .collect(Collectors.toList()));
-                    }
-                    // 添加权限标识（供@RequiresPermission和@PreAuthorize("hasAuthority('XXX')")使用）
-                    if (permissions != null) {
-                        authorities.addAll(permissions.stream()
-                                .map(SimpleGrantedAuthority::new)
-                                .collect(Collectors.toList()));
-                    }
-                    // 如果JWT中无角色和权限，默认赋予ROLE_USER
-                    if (authorities.isEmpty()) {
-                        authorities.add(new SimpleGrantedAuthority(com.tenant.common.constant.TenantConstants.ROLE_USER));
-                    }
-
-                    UsernamePasswordAuthenticationToken authentication =
-                            new UsernamePasswordAuthenticationToken(
-                                    username,
-                                    null,
-                                    authorities
-                            );
-                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                    SecurityContextHolder.getContext().setAuthentication(authentication);
-                }
-            } else {
-                // 没有有效令牌时，从请求头获取租户ID
-                String headerTenantId = request.getHeader(TENANT_HEADER_NAME);
-                if (headerTenantId != null && !headerTenantId.trim().isEmpty()) {
-                    // 检查租户ID来源是否由网关验证
+            if (username != null && jwtUtil.validateToken(token, username)) {
+                // 3. 从令牌中提取租户ID并设置到租户上下文
+                String tenantId = jwtUtil.getTenantIdFromToken(token);
+                if (tenantId != null) {
+                    TenantContextHolder.setCurrentTenantId(tenantId);
+                } else {
+                    // 如果令牌中没有租户ID，则从请求头中获取（仅当租户ID已由网关验证时）
+                    String headerTenantId = request.getHeader(TENANT_HEADER_NAME);
                     String verified = request.getHeader(TENANT_VERIFIED_HEADER);
-                    if (!"true".equals(verified)) {
-                        log.warn("安全警告：未认证请求的租户ID未经JWT验证，可能绕过了网关。tenantId={}, path={}",
-                                headerTenantId, request.getRequestURI());
+                    if (headerTenantId != null && !headerTenantId.trim().isEmpty()) {
+                        if (!"true".equals(verified)) {
+                            log.warn("安全警告：JWT中无租户ID，且请求头租户ID未经验证。tenantId={}, path={}",
+                                    headerTenantId, request.getRequestURI());
+                        }
+                        TenantContextHolder.setCurrentTenantId(headerTenantId);
                     }
-                    TenantContextHolder.setCurrentTenantId(headerTenantId);
                 }
-            }
 
-            filterChain.doFilter(request, response);
-        } catch (ServletException | IOException e) {
-            // 异常由全局异常处理器处理，此处直接抛出
-            throw e;
+                // 4. 从JWT中提取角色和权限，设置Spring Security认证上下文
+                List<String> roles = jwtUtil.getRolesFromToken(token);
+                List<String> permissions = jwtUtil.getPermissionsFromToken(token);
+                List<SimpleGrantedAuthority> authorities = new ArrayList<>();
+                // 添加角色（ROLE_前缀，供@PreAuthorize("hasRole('XXX')")使用）
+                if (roles != null) {
+                    authorities.addAll(roles.stream()
+                            .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
+                            .toList());
+                }
+                // 添加权限标识（供@RequiresPermission和@PreAuthorize("hasAuthority('XXX')")使用）
+                if (permissions != null) {
+                    authorities.addAll(permissions.stream()
+                            .map(SimpleGrantedAuthority::new)
+                            .toList());
+                }
+                // 如果JWT中无角色和权限，默认赋予ROLE_USER
+                if (authorities.isEmpty()) {
+                    authorities.add(new SimpleGrantedAuthority(com.tenant.common.constant.TenantConstants.ROLE_USER));
+                }
+
+                UsernamePasswordAuthenticationToken authentication =
+                        new UsernamePasswordAuthenticationToken(
+                                username,
+                                null,
+                                authorities
+                        );
+                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+            }
+        } else {
+            // 没有有效令牌时，从请求头获取租户ID
+            String headerTenantId = request.getHeader(TENANT_HEADER_NAME);
+            if (headerTenantId != null && !headerTenantId.trim().isEmpty()) {
+                // 检查租户ID来源是否由网关验证
+                String verified = request.getHeader(TENANT_VERIFIED_HEADER);
+                if (!"true".equals(verified)) {
+                    log.warn("安全警告：未认证请求的租户ID未经JWT验证，可能绕过了网关。tenantId={}, path={}",
+                            headerTenantId, request.getRequestURI());
+                }
+                TenantContextHolder.setCurrentTenantId(headerTenantId);
+            }
         }
+
+        filterChain.doFilter(request, response);
         // 注意：TenantContextHolder.clear() 已由 TenantIdentificationFilter 统一清理，此处不再重复清理
     }
 

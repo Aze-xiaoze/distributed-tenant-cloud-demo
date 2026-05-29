@@ -13,7 +13,7 @@ import java.util.Set;
  * @author Aze
  */
 @Data
-public class LoginUser {
+public class LoginUserVO {
 
     /**
      * 用户名（来自 JWT subject / Authentication principal）

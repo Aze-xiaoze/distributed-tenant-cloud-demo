@@ -2,6 +2,9 @@ package com.tenant.common.exception;
 
 import com.tenant.common.enums.ErrorCode;
 import lombok.Getter;
+import lombok.Setter;
+
+import java.io.Serial;
 
 /**
  * 业务异常类
@@ -11,8 +14,11 @@ import lombok.Getter;
  *
  * @author Aze
  */
+@Setter
+@Getter
 public class BusinessException extends RuntimeException {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     /**
@@ -60,11 +66,4 @@ public class BusinessException extends RuntimeException {
         this.code = ErrorCode.BUSINESS_ERROR.getCode(); // 默认业务错误码
     }
 
-    public Integer getCode() {
-        return code;
-    }
-
-    public void setCode(Integer code) {
-        this.code = code;
-    }
 }

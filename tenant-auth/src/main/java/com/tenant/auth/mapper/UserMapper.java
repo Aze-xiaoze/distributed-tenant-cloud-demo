@@ -1,7 +1,7 @@
 package com.tenant.auth.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.tenant.auth.entity.User;
+import com.tenant.auth.entity.UserEntity;
 import org.apache.ibatis.annotations.Mapper;
 
 /**
@@ -13,7 +13,7 @@ import org.apache.ibatis.annotations.Mapper;
  * @author Aze
  */
 @Mapper
-public interface UserMapper extends BaseMapper<User> {
+public interface UserMapper extends BaseMapper<UserEntity> {
     // 继承BaseMapper，自动获得常用的增删改查方法
     // 多租户过滤由MyBatis-Plus插件自动处理
 }

@@ -2,8 +2,8 @@ package com.tenant.system.job;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.tenant.core.tenant.TenantValidator;
-import com.tenant.system.entity.SysUser;
-import com.tenant.system.entity.Tenant;
+import com.tenant.system.entity.SysUserEntity;
+import com.tenant.system.entity.TenantEntity;
 import com.tenant.system.mapper.SysUserMapper;
 import com.tenant.system.mapper.TenantMapper;
 import com.tenant.system.service.EmailService;
@@ -27,7 +27,7 @@ import java.util.List;
  */
 @Slf4j
 @Component
-public class TenantXxlJobHandler {
+public class TenantXxlJobHandlerJob {
 
     @Autowired
     private TenantMapper tenantMapper;
@@ -57,33 +57,33 @@ public class TenantXxlJobHandler {
         XxlJobHelper.log("租户过期检查任务开始执行");
 
         try {
-            LambdaQueryWrapper<Tenant> wrapper = new LambdaQueryWrapper<>();
-            wrapper.eq(Tenant::getStatus, 1);
-            List<Tenant> tenants = tenantMapper.selectList(wrapper);
+            LambdaQueryWrapper<TenantEntity> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(TenantEntity::getStatus, 1);
+            List<TenantEntity> tenantEntities = tenantMapper.selectList(wrapper);
 
             LocalDate today = LocalDate.now();
             int warningCount = 0;
             int disabledCount = 0;
 
-            for (Tenant tenant : tenants) {
-                if (tenant.getExpireTime() == null) {
+            for (TenantEntity tenantEntity : tenantEntities) {
+                if (tenantEntity.getExpireTime() == null) {
                     continue;
                 }
 
-                LocalDate expireDate = tenant.getExpireTime().toLocalDate();
+                LocalDate expireDate = tenantEntity.getExpireTime().toLocalDate();
                 long daysLeft = ChronoUnit.DAYS.between(today, expireDate);
 
                 if (daysLeft == 30 || daysLeft == 7 || daysLeft == 1) {
-                    sendExpiryWarning(tenant, daysLeft);
+                    sendExpiryWarning(tenantEntity, daysLeft);
                     warningCount++;
                 } else if (daysLeft <= 0) {
-                    disableTenant(tenant);
+                    disableTenant(tenantEntity);
                     disabledCount++;
                 }
             }
 
             String result = "检查完成: 扫描%d个租户, 预警%d个, 停用%d个"
-                    .formatted(tenants.size(), warningCount, disabledCount);
+                    .formatted(tenantEntities.size(), warningCount, disabledCount);
             XxlJobHelper.handleSuccess(result);
             XxlJobHelper.log(result);
 
@@ -121,43 +121,43 @@ public class TenantXxlJobHandler {
         XxlJobHelper.log("租户配额检查任务开始执行");
 
         try {
-            LambdaQueryWrapper<Tenant> wrapper = new LambdaQueryWrapper<>();
-            wrapper.eq(Tenant::getStatus, 1);
-            List<Tenant> tenants = tenantMapper.selectList(wrapper);
+            LambdaQueryWrapper<TenantEntity> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(TenantEntity::getStatus, 1);
+            List<TenantEntity> tenantEntities = tenantMapper.selectList(wrapper);
 
             int overQuotaCount = 0;
 
-            for (Tenant tenant : tenants) {
-                String tenantCode = tenant.getTenantCode();
-                if (tenant.getMaxUsers() == null || tenant.getMaxUsers() <= 0) {
+            for (TenantEntity tenantEntity : tenantEntities) {
+                String tenantCode = tenantEntity.getTenantCode();
+                if (tenantEntity.getMaxUsers() == null || tenantEntity.getMaxUsers() <= 0) {
                     continue;
                 }
 
                 // 查询当前用户数
-                LambdaQueryWrapper<SysUser> userWrapper = new LambdaQueryWrapper<>();
-                userWrapper.eq(SysUser::getTenantId, tenantCode)
-                        .eq(SysUser::getStatus, 1);
+                LambdaQueryWrapper<SysUserEntity> userWrapper = new LambdaQueryWrapper<>();
+                userWrapper.eq(SysUserEntity::getTenantId, tenantCode)
+                        .eq(SysUserEntity::getStatus, 1);
                 long currentCount = sysUserMapper.selectCount(userWrapper);
 
-                if (currentCount >= tenant.getMaxUsers()) {
+                if (currentCount >= tenantEntity.getMaxUsers()) {
                     // 发送配额预警
                     List<Long> userIds = sysUserMapper.selectList(
-                                    new LambdaQueryWrapper<SysUser>()
-                                            .eq(SysUser::getTenantId, tenantCode)
-                                            .eq(SysUser::getStatus, 1))
-                            .stream().map(SysUser::getId).toList();
+                                    new LambdaQueryWrapper<SysUserEntity>()
+                                            .eq(SysUserEntity::getTenantId, tenantCode)
+                                            .eq(SysUserEntity::getStatus, 1))
+                            .stream().map(SysUserEntity::getId).toList();
 
                     if (!userIds.isEmpty()) {
                         notificationService.sendTenantWarning(tenantCode,
                                 "租户用户配额预警",
-                                "您的租户用户数已达上限（" + currentCount + "/" + tenant.getMaxUsers() + "），无法再添加新用户。请联系管理员升级配额。",
+                                "您的租户用户数已达上限（" + currentCount + "/" + tenantEntity.getMaxUsers() + "），无法再添加新用户。请联系管理员升级配额。",
                                 userIds);
                     }
                     overQuotaCount++;
                 }
             }
 
-            String result = "检查完成: 扫描%d个租户, %d个超配额".formatted(tenants.size(), overQuotaCount);
+            String result = "检查完成: 扫描%d个租户, %d个超配额".formatted(tenantEntities.size(), overQuotaCount);
             XxlJobHelper.handleSuccess(result);
             XxlJobHelper.log(result);
 
@@ -169,42 +169,42 @@ public class TenantXxlJobHandler {
 
     // ======================== 私有方法 ========================
 
-    private void sendExpiryWarning(Tenant tenant, long daysLeft) {
-        String tenantCode = tenant.getTenantCode();
+    private void sendExpiryWarning(TenantEntity tenantEntity, long daysLeft) {
+        String tenantCode = tenantEntity.getTenantCode();
         String level = daysLeft <= 1 ? "【最后通知】" : daysLeft <= 7 ? "【紧急】" : "";
         String message = level + "您的租户将于" + daysLeft + "天后到期，请及时续费以避免服务中断。";
 
-        LambdaQueryWrapper<SysUser> userWrapper = new LambdaQueryWrapper<>();
-        userWrapper.eq(SysUser::getTenantId, tenantCode).eq(SysUser::getStatus, 1);
-        List<SysUser> users = sysUserMapper.selectList(userWrapper);
-        List<Long> userIds = users.stream().map(SysUser::getId).toList();
+        LambdaQueryWrapper<SysUserEntity> userWrapper = new LambdaQueryWrapper<>();
+        userWrapper.eq(SysUserEntity::getTenantId, tenantCode).eq(SysUserEntity::getStatus, 1);
+        List<SysUserEntity> users = sysUserMapper.selectList(userWrapper);
+        List<Long> userIds = users.stream().map(SysUserEntity::getId).toList();
 
         if (!userIds.isEmpty()) {
             notificationService.sendTenantWarning(tenantCode, "租户到期预警（剩余" + daysLeft + "天）", message, userIds);
         }
 
-        for (SysUser user : users) {
+        for (SysUserEntity user : users) {
             if (user.getEmail() != null && !user.getEmail().isEmpty()) {
-                String expireDate = tenant.getExpireTime() != null
-                        ? tenant.getExpireTime().toLocalDate().toString() : "未知";
+                String expireDate = tenantEntity.getExpireTime() != null
+                        ? tenantEntity.getExpireTime().toLocalDate().toString() : "未知";
                 emailService.sendTenantExpiryWarning(user.getEmail(), tenantCode, daysLeft, expireDate);
             }
         }
     }
 
-    private void disableTenant(Tenant tenant) {
-        tenant.setStatus(0);
-        tenantMapper.updateById(tenant);
+    private void disableTenant(TenantEntity tenantEntity) {
+        tenantEntity.setStatus(0);
+        tenantMapper.updateById(tenantEntity);
 
         // 清除租户缓存
-        tenantValidator.clearExpiredCache(tenant.getTenantCode());
+        tenantValidator.clearExpiredCache(tenantEntity.getTenantCode());
 
-        String tenantCode = tenant.getTenantCode();
+        String tenantCode = tenantEntity.getTenantCode();
 
-        LambdaQueryWrapper<SysUser> userWrapper = new LambdaQueryWrapper<>();
-        userWrapper.eq(SysUser::getTenantId, tenantCode);
-        List<SysUser> users = sysUserMapper.selectList(userWrapper);
-        List<Long> userIds = users.stream().map(SysUser::getId).toList();
+        LambdaQueryWrapper<SysUserEntity> userWrapper = new LambdaQueryWrapper<>();
+        userWrapper.eq(SysUserEntity::getTenantId, tenantCode);
+        List<SysUserEntity> users = sysUserMapper.selectList(userWrapper);
+        List<Long> userIds = users.stream().map(SysUserEntity::getId).toList();
 
         if (!userIds.isEmpty()) {
             notificationService.sendTenantWarning(tenantCode,

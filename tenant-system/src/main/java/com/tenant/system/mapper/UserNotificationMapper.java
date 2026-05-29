@@ -1,7 +1,7 @@
 package com.tenant.system.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.tenant.system.entity.UserNotification;
+import com.tenant.system.entity.UserNotificationEntity;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Update;
@@ -12,7 +12,7 @@ import org.apache.ibatis.annotations.Update;
  * @author Aze
  */
 @Mapper
-public interface UserNotificationMapper extends BaseMapper<UserNotification> {
+public interface UserNotificationMapper extends BaseMapper<UserNotificationEntity> {
 
     /**
      * 批量标记已读（将指定用户的所有未读消息标记为已读）

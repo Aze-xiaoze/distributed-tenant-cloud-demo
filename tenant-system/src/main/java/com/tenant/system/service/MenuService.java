@@ -1,7 +1,7 @@
 package com.tenant.system.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.tenant.system.entity.Menu;
+import com.tenant.system.entity.MenuEntity;
 
 import java.util.List;
 
@@ -11,7 +11,7 @@ import java.util.List;
  *
  * @author Aze
  */
-public interface MenuService extends IService<Menu> {
+public interface MenuService extends IService<MenuEntity> {
 
     /**
      * 根据角色ID获取菜单列表
@@ -19,5 +19,5 @@ public interface MenuService extends IService<Menu> {
      * @param roleId 角色ID
      * @return 菜单列表
      */
-    List<Menu> listByRoleId(Long roleId);
+    List<MenuEntity> listByRoleId(Long roleId);
 }

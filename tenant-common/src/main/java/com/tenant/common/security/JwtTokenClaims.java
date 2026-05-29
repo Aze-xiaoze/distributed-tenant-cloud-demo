@@ -1,5 +1,7 @@
 package com.tenant.common.security;
 
+import lombok.Data;
+
 import java.util.List;
 
 /**
@@ -9,6 +11,7 @@ import java.util.List;
  *
  * @author Aze
  */
+@Data
 public class JwtTokenClaims {
 
     private String username;
@@ -19,70 +22,6 @@ public class JwtTokenClaims {
     private List<String> permissions;
     private Long issuedAtMillis;
     private Long expirationMillis;
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public String getTenantId() {
-        return tenantId;
-    }
-
-    public void setTenantId(String tenantId) {
-        this.tenantId = tenantId;
-    }
-
-    public String getJti() {
-        return jti;
-    }
-
-    public void setJti(String jti) {
-        this.jti = jti;
-    }
-
-    public String getTokenType() {
-        return tokenType;
-    }
-
-    public void setTokenType(String tokenType) {
-        this.tokenType = tokenType;
-    }
-
-    public List<String> getRoles() {
-        return roles;
-    }
-
-    public void setRoles(List<String> roles) {
-        this.roles = roles;
-    }
-
-    public List<String> getPermissions() {
-        return permissions;
-    }
-
-    public void setPermissions(List<String> permissions) {
-        this.permissions = permissions;
-    }
-
-    public Long getIssuedAtMillis() {
-        return issuedAtMillis;
-    }
-
-    public void setIssuedAtMillis(Long issuedAtMillis) {
-        this.issuedAtMillis = issuedAtMillis;
-    }
-
-    public Long getExpirationMillis() {
-        return expirationMillis;
-    }
-
-    public void setExpirationMillis(Long expirationMillis) {
-        this.expirationMillis = expirationMillis;
-    }
 
     /**
      * 判断当前令牌是否为RefreshToken

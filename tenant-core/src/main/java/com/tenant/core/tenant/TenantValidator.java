@@ -1,5 +1,6 @@
 package com.tenant.core.tenant;
 
+import lombok.Data;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -37,11 +38,8 @@ public class TenantValidator {
 
     private final StringRedisTemplate redisTemplate;
 
-    private final TenantCacheUtil tenantCacheUtil;
-
     public TenantValidator(StringRedisTemplate redisTemplate, TenantCacheUtil tenantCacheUtil) {
         this.redisTemplate = redisTemplate;
-        this.tenantCacheUtil = tenantCacheUtil;
     }
 
     /**
@@ -168,26 +166,11 @@ public class TenantValidator {
     /**
      * 租户校验结果
      */
+    @Data
     public static class TenantValidationResult {
 
         private boolean valid = true;
 
         private String errorMessage;
-
-        public boolean isValid() {
-            return valid;
-        }
-
-        public void setValid(boolean valid) {
-            this.valid = valid;
-        }
-
-        public String getErrorMessage() {
-            return errorMessage;
-        }
-
-        public void setErrorMessage(String errorMessage) {
-            this.errorMessage = errorMessage;
-        }
     }
 }

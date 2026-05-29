@@ -1,7 +1,7 @@
 package com.tenant.auth.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.tenant.auth.entity.TenantInfo;
+import com.tenant.auth.entity.TenantInfoEntity;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
 
@@ -13,7 +13,7 @@ import org.apache.ibatis.annotations.Select;
  * @author Aze
  */
 @Mapper
-public interface TenantInfoMapper extends BaseMapper<TenantInfo> {
+public interface TenantInfoMapper extends BaseMapper<TenantInfoEntity> {
 
     /**
      * 根据租户编码查询租户状态和过期信息
@@ -22,5 +22,5 @@ public interface TenantInfoMapper extends BaseMapper<TenantInfo> {
      * @return 租户信息
      */
     @Select("SELECT tenant_code, status, expire_time, max_users FROM tenants WHERE tenant_code = #{tenantCode} AND deleted = 0")
-    TenantInfo selectByTenantCode(String tenantCode);
+    TenantInfoEntity selectByTenantCode(String tenantCode);
 }

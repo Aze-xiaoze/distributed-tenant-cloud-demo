@@ -3,7 +3,7 @@ package com.tenant.auth.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.inner.TenantLineInnerInterceptor;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.tenant.auth.entity.User;
+import com.tenant.auth.entity.UserEntity;
 import com.tenant.auth.mapper.UserMapper;
 import com.tenant.auth.service.UserService;
 import com.tenant.core.tenant.TenantContextHolder;
@@ -22,7 +22,7 @@ import org.springframework.stereotype.Service;
  * @author Aze
  */
 @Service
-public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
+public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> implements UserService {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -35,9 +35,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
      * @return 用户信息
      */
     @Override
-    public User getUserByUsername(String username) {
-        LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(User::getUsername, username);
+    public UserEntity getUserByUsername(String username) {
+        LambdaQueryWrapper<UserEntity> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(UserEntity::getUsername, username);
         return this.getOne(wrapper);
     }
 
@@ -49,9 +49,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
      * @return 用户信息
      */
     @Override
-    public User getUserById(Long userId) {
-        LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(User::getId, userId);
+    public UserEntity getUserById(Long userId) {
+        LambdaQueryWrapper<UserEntity> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(UserEntity::getId, userId);
         return this.getOne(wrapper);
     }
 
@@ -63,10 +63,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
      * @return 用户信息，如果验证失败则返回null
      */
     @Override
-    public User authenticate(String username, String password) {
-        User user = this.getUserByUsername(username);
-        if (user != null && passwordEncoder.matches(password, user.getPassword())) {
-            return user;
+    public UserEntity authenticate(String username, String password) {
+        UserEntity userEntity = this.getUserByUsername(username);
+        if (userEntity != null && passwordEncoder.matches(password, userEntity.getPassword())) {
+            return userEntity;
         }
         return null;
     }
@@ -75,19 +75,19 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
      * 注册新用户
      * 自动从上下文中获取租户ID并设置到用户实体
      *
-     * @param user 用户信息
+     * @param userEntity 用户信息
      * @return 注册是否成功
      */
     @Override
-    public boolean registerUser(User user) {
+    public boolean registerUser(UserEntity userEntity) {
         // 从上下文中获取租户ID
         String tenantId = TenantContextHolder.getCurrentTenantId();
         if (tenantId == null || tenantId.trim().isEmpty()) {
             tenantId = "default_tenant";
         }
-        user.setTenantId(tenantId);
+        userEntity.setTenantId(tenantId);
         // 加密密码
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-        return this.save(user);
+        userEntity.setPassword(passwordEncoder.encode(userEntity.getPassword()));
+        return this.save(userEntity);
     }
 }

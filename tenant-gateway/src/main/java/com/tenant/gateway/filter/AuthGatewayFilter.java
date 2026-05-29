@@ -77,13 +77,13 @@ public class AuthGatewayFilter implements GlobalFilter, Ordered {
             "/favicon.ico"
     );
 
-    @Value("${jwt.secret:defaultSecretKeyForTenantCloudPlatformThatIsAtLeast64BytesLongForHS512}")
-    private String secret;
-
     private final StringRedisTemplate redisTemplate;
+    private final String jwtSecret;
 
-    public AuthGatewayFilter(StringRedisTemplate redisTemplate) {
+    public AuthGatewayFilter(StringRedisTemplate redisTemplate,
+                             @Value("${jwt.secret:defaultSecretKeyForTenantCloudPlatformThatIsAtLeast64BytesLongForHS512}") String jwtSecret) {
         this.redisTemplate = redisTemplate;
+        this.jwtSecret = jwtSecret;
     }
 
     @Override
@@ -104,7 +104,7 @@ public class AuthGatewayFilter implements GlobalFilter, Ordered {
 
         String token = authHeader.substring(BEARER_PREFIX.length());
 
-        JwtTokenParser tokenParser = new JwtTokenParser(secret);
+        JwtTokenParser tokenParser = new JwtTokenParser(jwtSecret);
         JwtTokenClaims claims = tokenParser.parseToken(token);
         if (claims == null) {
             log.warn("JWT解析失败，path={}", path);

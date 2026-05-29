@@ -1,7 +1,7 @@
 package com.tenant.system.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.tenant.system.entity.Tenant;
+import com.tenant.system.entity.TenantEntity;
 
 /**
  * 租户服务接口
@@ -9,7 +9,7 @@ import com.tenant.system.entity.Tenant;
  *
  * @author Aze
  */
-public interface TenantService extends IService<Tenant> {
+public interface TenantService extends IService<TenantEntity> {
 
     /**
      * 根据租户编码获取租户信息
@@ -17,5 +17,5 @@ public interface TenantService extends IService<Tenant> {
      * @param tenantCode 租户编码
      * @return 租户信息
      */
-    Tenant getByTenantCode(String tenantCode);
+    TenantEntity getByTenantCode(String tenantCode);
 }

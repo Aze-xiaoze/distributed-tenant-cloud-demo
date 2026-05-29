@@ -2,7 +2,7 @@ package com.tenant.system.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.tenant.system.entity.SysUser;
+import com.tenant.system.entity.SysUserEntity;
 import com.tenant.system.mapper.SysUserMapper;
 import com.tenant.system.service.SysUserService;
 import org.springframework.stereotype.Service;
@@ -15,12 +15,12 @@ import org.springframework.stereotype.Service;
  * @author Aze
  */
 @Service
-public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> implements SysUserService {
+public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUserEntity> implements SysUserService {
 
     @Override
-    public SysUser getUserByUsername(String username) {
-        LambdaQueryWrapper<SysUser> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(SysUser::getUsername, username);
+    public SysUserEntity getUserByUsername(String username) {
+        LambdaQueryWrapper<SysUserEntity> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(SysUserEntity::getUsername, username);
         return this.getOne(wrapper);
     }
 }

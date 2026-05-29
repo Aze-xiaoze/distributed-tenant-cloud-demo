@@ -2,6 +2,7 @@ package com.tenant.common.vo;
 
 import lombok.Data;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 /**
@@ -20,8 +21,9 @@ import java.io.Serializable;
  * @author Aze
  */
 @Data
-public class Result<T> implements Serializable {
+public class ResultVO<T> implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     /**
@@ -44,17 +46,17 @@ public class Result<T> implements Serializable {
      */
     private Long timestamp;
 
-    public Result() {
+    public ResultVO() {
         this.timestamp = System.currentTimeMillis();
     }
 
-    public Result(Integer code, String message) {
+    public ResultVO(Integer code, String message) {
         this();
         this.code = code;
         this.message = message;
     }
 
-    public Result(Integer code, String message, T data) {
+    public ResultVO(Integer code, String message, T data) {
         this(code, message);
         this.data = data;
     }
@@ -66,8 +68,8 @@ public class Result<T> implements Serializable {
      * @param <T> 响应类型
      * @return 成功结果（code=200, message="操作成功", data=null）
      */
-    public static <T> Result<T> success() {
-        return new Result<>(200, "操作成功");
+    public static <T> ResultVO<T> success() {
+        return new ResultVO<>(200, "操作成功");
     }
 
     /**
@@ -78,8 +80,8 @@ public class Result<T> implements Serializable {
      * @param <T>  响应类型
      * @return 成功结果（code=200, message="操作成功", data=传入数据）
      */
-    public static <T> Result<T> success(T data) {
-        return new Result<>(200, "操作成功", data);
+    public static <T> ResultVO<T> success(T data) {
+        return new ResultVO<>(200, "操作成功", data);
     }
 
     /**
@@ -91,8 +93,8 @@ public class Result<T> implements Serializable {
      * @param <T>     响应类型
      * @return 成功结果（code=200, message=传入消息, data=传入数据）
      */
-    public static <T> Result<T> success(String message, T data) {
-        return new Result<>(200, message, data);
+    public static <T> ResultVO<T> success(String message, T data) {
+        return new ResultVO<>(200, message, data);
     }
 
     /**
@@ -103,8 +105,8 @@ public class Result<T> implements Serializable {
      * @param <T>     响应类型
      * @return 失败结果（code=500, message=传入消息）
      */
-    public static <T> Result<T> error(String message) {
-        return new Result<>(500, message);
+    public static <T> ResultVO<T> error(String message) {
+        return new ResultVO<>(500, message);
     }
 
     /**
@@ -116,8 +118,8 @@ public class Result<T> implements Serializable {
      * @param <T>     响应类型
      * @return 失败结果（code=传入错误码, message=传入消息）
      */
-    public static <T> Result<T> error(Integer code, String message) {
-        return new Result<>(code, message);
+    public static <T> ResultVO<T> error(Integer code, String message) {
+        return new ResultVO<>(code, message);
     }
 
     /**
@@ -128,7 +130,7 @@ public class Result<T> implements Serializable {
      * @param <T>     响应类型
      * @return 业务失败结果（code=400, message=传入消息）
      */
-    public static <T> Result<T> fail(String message) {
-        return new Result<>(400, message);
+    public static <T> ResultVO<T> fail(String message) {
+        return new ResultVO<>(400, message);
     }
 }

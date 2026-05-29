@@ -1,5 +1,6 @@
 package com.tenant.auth.config.properties;
 
+import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Component;
  *
  * @author Aze
  */
+@Data
 @Component
 @ConfigurationProperties(prefix = "jwt")
 public class JwtProperties {
@@ -39,28 +41,4 @@ public class JwtProperties {
      * 有效期较长以减少用户登录频率
      */
     private Long refreshExpiration = 604800000L;
-
-    public String getSecret() {
-        return secret;
-    }
-
-    public void setSecret(String secret) {
-        this.secret = secret;
-    }
-
-    public Long getExpiration() {
-        return expiration;
-    }
-
-    public void setExpiration(Long expiration) {
-        this.expiration = expiration;
-    }
-
-    public Long getRefreshExpiration() {
-        return refreshExpiration;
-    }
-
-    public void setRefreshExpiration(Long refreshExpiration) {
-        this.refreshExpiration = refreshExpiration;
-    }
 }

@@ -2,8 +2,8 @@ package com.tenant.system.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.tenant.system.entity.Menu;
-import com.tenant.system.entity.RoleMenu;
+import com.tenant.system.entity.MenuEntity;
+import com.tenant.system.entity.RoleMenuEntity;
 import com.tenant.system.mapper.MenuMapper;
 import com.tenant.system.mapper.RoleMenuMapper;
 import com.tenant.system.service.MenuService;
@@ -19,18 +19,18 @@ import java.util.stream.Collectors;
  * @author Aze
  */
 @Service
-public class MenuServiceImpl extends ServiceImpl<MenuMapper, Menu> implements MenuService {
+public class MenuServiceImpl extends ServiceImpl<MenuMapper, MenuEntity> implements MenuService {
 
     @Autowired
     private RoleMenuMapper roleMenuMapper;
 
     @Override
-    public List<Menu> listByRoleId(Long roleId) {
+    public List<MenuEntity> listByRoleId(Long roleId) {
         // 先查角色-菜单关联，获取菜单ID列表
-        LambdaQueryWrapper<RoleMenu> rmWrapper = new LambdaQueryWrapper<>();
-        rmWrapper.eq(RoleMenu::getRoleId, roleId);
+        LambdaQueryWrapper<RoleMenuEntity> rmWrapper = new LambdaQueryWrapper<>();
+        rmWrapper.eq(RoleMenuEntity::getRoleId, roleId);
         List<Long> menuIds = roleMenuMapper.selectList(rmWrapper).stream()
-                .map(RoleMenu::getMenuId)
+                .map(RoleMenuEntity::getMenuId)
                 .collect(Collectors.toList());
 
         if (menuIds.isEmpty()) {
@@ -38,8 +38,8 @@ public class MenuServiceImpl extends ServiceImpl<MenuMapper, Menu> implements Me
         }
 
         // 再查菜单详情
-        LambdaQueryWrapper<Menu> menuWrapper = new LambdaQueryWrapper<>();
-        menuWrapper.in(Menu::getId, menuIds).orderByAsc(Menu::getSortOrder);
+        LambdaQueryWrapper<MenuEntity> menuWrapper = new LambdaQueryWrapper<>();
+        menuWrapper.in(MenuEntity::getId, menuIds).orderByAsc(MenuEntity::getSortOrder);
         return this.list(menuWrapper);
     }
 }

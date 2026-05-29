@@ -1,7 +1,6 @@
 package com.tenant.auth.util;
 
 import com.tenant.auth.config.properties.JwtProperties;
-import com.tenant.common.security.JwtTokenClaims;
 import com.tenant.common.security.JwtTokenParser;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;

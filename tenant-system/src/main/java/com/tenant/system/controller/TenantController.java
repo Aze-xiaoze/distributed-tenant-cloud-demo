@@ -1,8 +1,8 @@
 package com.tenant.system.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.tenant.common.vo.Result;
-import com.tenant.system.entity.Tenant;
+import com.tenant.common.vo.ResultVO;
+import com.tenant.system.entity.TenantEntity;
 import com.tenant.system.service.TenantService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,64 +27,64 @@ public class TenantController {
      * 分页查询租户列表
      */
     @GetMapping("/page")
-    public Result<Page<Tenant>> page(@RequestParam(defaultValue = "1") Long current,
-                                     @RequestParam(defaultValue = "10") Long size) {
-        Page<Tenant> page = new Page<>(current, size);
-        Page<Tenant> result = tenantService.page(page);
-        return Result.success(result);
+    public ResultVO<Page<TenantEntity>> page(@RequestParam(defaultValue = "1") Long current,
+                                             @RequestParam(defaultValue = "10") Long size) {
+        Page<TenantEntity> page = new Page<>(current, size);
+        Page<TenantEntity> result = tenantService.page(page);
+        return ResultVO.success(result);
     }
 
     /**
      * 根据ID获取租户信息
      */
     @GetMapping("/{id}")
-    public Result<Tenant> getById(@PathVariable Long id) {
-        Tenant tenant = tenantService.getById(id);
-        if (tenant != null) {
-            return Result.success(tenant);
+    public ResultVO<TenantEntity> getById(@PathVariable Long id) {
+        TenantEntity tenantEntity = tenantService.getById(id);
+        if (tenantEntity != null) {
+            return ResultVO.success(tenantEntity);
         }
-        return Result.error("租户不存在");
+        return ResultVO.error("租户不存在");
     }
 
     /**
      * 根据租户编码获取租户信息
      */
     @GetMapping("/code/{tenantCode}")
-    public Result<Tenant> getByTenantCode(@PathVariable String tenantCode) {
-        Tenant tenant = tenantService.getByTenantCode(tenantCode);
-        if (tenant != null) {
-            return Result.success(tenant);
+    public ResultVO<TenantEntity> getByTenantCode(@PathVariable String tenantCode) {
+        TenantEntity tenantEntity = tenantService.getByTenantCode(tenantCode);
+        if (tenantEntity != null) {
+            return ResultVO.success(tenantEntity);
         }
-        return Result.error("租户不存在");
+        return ResultVO.error("租户不存在");
     }
 
     /**
      * 新增租户
      */
     @PostMapping
-    public Result<String> add(@Valid @RequestBody Tenant tenant) {
-        boolean success = tenantService.save(tenant);
-        return success ? Result.success("新增成功") : Result.error("新增失败");
+    public ResultVO<String> add(@Valid @RequestBody TenantEntity tenantEntity) {
+        boolean success = tenantService.save(tenantEntity);
+        return success ? ResultVO.success("新增成功") : ResultVO.error("新增失败");
     }
 
     /**
      * 更新租户
      */
     @PutMapping
-    public Result<String> update(@Valid @RequestBody Tenant tenant) {
-        boolean success = tenantService.updateById(tenant);
-        return success ? Result.success("更新成功") : Result.error("更新失败");
+    public ResultVO<String> update(@Valid @RequestBody TenantEntity tenantEntity) {
+        boolean success = tenantService.updateById(tenantEntity);
+        return success ? ResultVO.success("更新成功") : ResultVO.error("更新失败");
     }
 
     /**
      * 更新租户状态
      */
     @PutMapping("/{id}/status")
-    public Result<String> updateStatus(@PathVariable Long id, @RequestParam Integer status) {
-        Tenant tenant = new Tenant();
-        tenant.setId(id);
-        tenant.setStatus(status);
-        boolean success = tenantService.updateById(tenant);
-        return success ? Result.success("操作成功") : Result.error("操作失败");
+    public ResultVO<String> updateStatus(@PathVariable Long id, @RequestParam Integer status) {
+        TenantEntity tenantEntity = new TenantEntity();
+        tenantEntity.setId(id);
+        tenantEntity.setStatus(status);
+        boolean success = tenantService.updateById(tenantEntity);
+        return success ? ResultVO.success("操作成功") : ResultVO.error("操作失败");
     }
 }

@@ -1,26 +1,24 @@
 package com.tenant.auth.controller;
 
 import com.tenant.auth.config.properties.JwtProperties;
-import com.tenant.auth.dto.LoginRequest;
-import com.tenant.auth.dto.RegisterRequest;
-import com.tenant.auth.entity.TenantInfo;
-import com.tenant.auth.entity.User;
+import com.tenant.auth.dto.LoginRequestDTO;
+import com.tenant.auth.dto.RegisterRequestDTO;
+import com.tenant.auth.entity.TenantInfoEntity;
+import com.tenant.auth.entity.UserEntity;
 import com.tenant.auth.mapper.RolePermissionMapper;
 import com.tenant.auth.mapper.TenantInfoMapper;
 import com.tenant.auth.service.UserService;
 import com.tenant.auth.util.JwtUtil;
-import com.tenant.common.vo.Result;
+import com.tenant.common.vo.ResultVO;
 import com.tenant.core.log.LoginLogService;
 import com.tenant.core.security.PasswordValidator;
 import com.tenant.core.security.RefreshTokenService;
 import com.tenant.core.security.TokenBlacklistService;
-import com.tenant.core.tenant.TenantContextHolder;
 import com.tenant.core.tenant.TenantValidator;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -85,105 +83,105 @@ public class AuthController {
      * @return 认证结果，包含JWT令牌、租户ID、角色和权限
      */
     @PostMapping("/login")
-    public Result<Map<String, Object>> login(@Valid @RequestBody LoginRequest loginRequest) {
+    public ResultVO<Map<String, Object>> login(@Valid @RequestBody LoginRequestDTO loginRequest) {
         String username = loginRequest.getUsername();
 
         // 检查用户是否被锁定（连续登录失败过多）
         if (loginLogService.isUserLocked(username)) {
             loginLogService.logLoginFailure(username, null, "账户已锁定，请15分钟后重试");
-            return Result.error("账户已锁定，连续登录失败次数过多，请15分钟后重试");
+            return ResultVO.error("账户已锁定，连续登录失败次数过多，请15分钟后重试");
         }
 
         // 检查IP是否被封禁
         String clientIp = getClientIp();
         if (clientIp != null && loginLogService.isIpBanned(clientIp)) {
             loginLogService.logLoginFailure(username, null, "IP已被封禁");
-            return Result.error("当前IP登录失败次数过多，请30分钟后重试");
+            return ResultVO.error("当前IP登录失败次数过多，请30分钟后重试");
         }
 
         // 验证用户凭据
-        User user = userService.authenticate(loginRequest.getUsername(), loginRequest.getPassword());
+        UserEntity userEntity = userService.authenticate(loginRequest.getUsername(), loginRequest.getPassword());
 
-        if (user == null) {
+        if (userEntity == null) {
             // 记录登录失败日志
             loginLogService.logLoginFailure(username, null, "用户名或密码错误");
-            return Result.error("用户名或密码错误");
+            return ResultVO.error("用户名或密码错误");
         }
 
         // 校验租户状态和过期时间
-        TenantInfo tenantInfo = tenantInfoMapper.selectByTenantCode(user.getTenantId());
-        if (tenantInfo != null) {
+        TenantInfoEntity tenantInfoEntity = tenantInfoMapper.selectByTenantCode(userEntity.getTenantId());
+        if (tenantInfoEntity != null) {
             TenantValidator.TenantValidationResult tenantResult =
-                    tenantValidator.validateTenant(user.getTenantId(), tenantInfo.getExpireTime(), tenantInfo.getStatus());
+                    tenantValidator.validateTenant(userEntity.getTenantId(), tenantInfoEntity.getExpireTime(), tenantInfoEntity.getStatus());
             if (!tenantResult.isValid()) {
-                loginLogService.logLoginFailure(username, user.getTenantId(), tenantResult.getErrorMessage());
-                return Result.error(tenantResult.getErrorMessage());
+                loginLogService.logLoginFailure(username, userEntity.getTenantId(), tenantResult.getErrorMessage());
+                return ResultVO.error(tenantResult.getErrorMessage());
             }
         }
 
         // 查询用户角色和权限
-        List<String> roles = rolePermissionMapper.selectRoleCodesByUserId(user.getId());
-        List<String> permissions = rolePermissionMapper.selectPermissionsByUserId(user.getId());
+        List<String> roles = rolePermissionMapper.selectRoleCodesByUserId(userEntity.getId());
+        List<String> permissions = rolePermissionMapper.selectPermissionsByUserId(userEntity.getId());
 
         // 生成AccessToken（包含用户名、租户ID、角色和权限）
-        String token = jwtUtil.generateToken(user.getUsername(), user.getTenantId(), roles, permissions);
+        String token = jwtUtil.generateToken(userEntity.getUsername(), userEntity.getTenantId(), roles, permissions);
 
         // 生成RefreshToken（仅包含用户名和租户ID，有效期长）
-        String refreshToken = jwtUtil.generateRefreshToken(user.getUsername(), user.getTenantId());
-        refreshTokenService.storeRefreshToken(user.getUsername(), refreshToken, jwtProperties.getRefreshExpiration());
+        String refreshToken = jwtUtil.generateRefreshToken(userEntity.getUsername(), userEntity.getTenantId());
+        refreshTokenService.storeRefreshToken(userEntity.getUsername(), refreshToken, jwtProperties.getRefreshExpiration());
 
         Map<String, Object> data = new HashMap<>();
         data.put("token", token);
         data.put("refreshToken", refreshToken);
         data.put("tokenExpiresIn", jwtProperties.getExpiration() / 1000); // 秒
         data.put("refreshExpiresIn", jwtProperties.getRefreshExpiration() / 1000); // 秒
-        data.put("tenantId", user.getTenantId());
-        data.put("username", user.getUsername());
+        data.put("tenantId", userEntity.getTenantId());
+        data.put("username", userEntity.getUsername());
         data.put("roles", roles);
         data.put("permissions", permissions);
 
         // 记录登录成功日志
-        loginLogService.logLoginSuccess(user.getUsername(), user.getTenantId(), "登录成功");
+        loginLogService.logLoginSuccess(userEntity.getUsername(), userEntity.getTenantId(), "登录成功");
 
-        return Result.success("登录成功", data);
+        return ResultVO.success("登录成功", data);
     }
 
     /**
      * 用户注册
      *
-     * @param registerRequest 注册请求
+     * @param registerRequestDTO 注册请求
      * @return 注册结果
      */
     @PostMapping("/register")
-    public Result<String> register(@Valid @RequestBody RegisterRequest registerRequest) {
+    public ResultVO<String> register(@Valid @RequestBody RegisterRequestDTO registerRequestDTO) {
         // 密码强度校验（超出注解校验范围的复杂度规则）
         PasswordValidator.PasswordValidationResult pwdResult =
-                PasswordValidator.validate(registerRequest.getPassword(), registerRequest.getUsername());
+                PasswordValidator.validate(registerRequestDTO.getPassword(), registerRequestDTO.getUsername());
         if (!pwdResult.isValid()) {
-            return Result.error("密码不符合安全策略：" + pwdResult.getErrors());
+            return ResultVO.error("密码不符合安全策略：" + pwdResult.getErrors());
         }
 
         // 验证用户是否已存在
-        User existingUser = userService.getUserByUsername(registerRequest.getUsername());
-        if (existingUser != null) {
-            return Result.error("用户名已存在");
+        UserEntity existingUserEntity = userService.getUserByUsername(registerRequestDTO.getUsername());
+        if (existingUserEntity != null) {
+            return ResultVO.error("用户名已存在");
         }
 
         // 构建用户实体
-        User user = new User();
-        user.setUsername(registerRequest.getUsername());
-        user.setPassword(registerRequest.getPassword());
-        user.setNickname(registerRequest.getNickname());
-        user.setEmail(registerRequest.getEmail());
-        user.setPhone(registerRequest.getPhone());
-        user.setStatus(1);
+        UserEntity userEntity = new UserEntity();
+        userEntity.setUsername(registerRequestDTO.getUsername());
+        userEntity.setPassword(registerRequestDTO.getPassword());
+        userEntity.setNickname(registerRequestDTO.getNickname());
+        userEntity.setEmail(registerRequestDTO.getEmail());
+        userEntity.setPhone(registerRequestDTO.getPhone());
+        userEntity.setStatus(1);
 
         // 执行注册逻辑（租户ID由上下文自动注入）
-        boolean success = userService.registerUser(user);
+        boolean success = userService.registerUser(userEntity);
         if (success) {
-            return Result.success("注册成功");
+            return ResultVO.success("注册成功");
         } else {
-            return Result.error("注册失败");
+            return ResultVO.error("注册失败");
         }
     }
 
@@ -194,7 +192,7 @@ public class AuthController {
      * @return 验证结果
      */
     @GetMapping("/validate-token")
-    public Result<Boolean> validateToken(@RequestParam String token) {
+    public ResultVO<Boolean> validateToken(@RequestParam String token) {
         try {
             String username = jwtUtil.getUsernameFromToken(token);
             boolean isValid = jwtUtil.validateToken(token, username);
@@ -204,9 +202,9 @@ public class AuthController {
                 long issuedAt = jwtUtil.getIssuedAtMillisFromToken(token);
                 isValid = !tokenBlacklistService.isTokenRevoked(jti, username, issuedAt);
             }
-            return Result.success(isValid);
+            return ResultVO.success(isValid);
         } catch (Exception e) {
-            return Result.error("令牌验证失败");
+            return ResultVO.error("令牌验证失败");
         }
     }
 
@@ -219,10 +217,10 @@ public class AuthController {
      * @return 注销结果
      */
     @PostMapping("/logout")
-    public Result<String> logout(HttpServletRequest request) {
+    public ResultVO<String> logout(HttpServletRequest request) {
         String token = extractTokenFromRequest(request);
         if (token == null) {
-            return Result.error(401, "未提供认证令牌");
+            return ResultVO.error(401, "未提供认证令牌");
         }
 
         try {
@@ -239,9 +237,9 @@ public class AuthController {
             String username = jwtUtil.getUsernameFromToken(token);
             refreshTokenService.revokeRefreshToken(username);
 
-            return Result.success("注销成功");
+            return ResultVO.success("注销成功");
         } catch (Exception e) {
-            return Result.error("注销失败：" + e.getMessage());
+            return ResultVO.error("注销失败：" + e.getMessage());
         }
     }
 
@@ -297,23 +295,21 @@ public class AuthController {
      * @return 新的AccessToken和RefreshToken
      */
     @PostMapping("/refresh-token")
-    public Result<Map<String, Object>> refreshToken(HttpServletRequest request) {
+    public ResultVO<Map<String, Object>> refreshToken(HttpServletRequest request) {
         String refreshToken = extractTokenFromRequest(request);
         if (refreshToken == null) {
-            return Result.error(401, "未提供刷新令牌");
+            return ResultVO.error(401, "未提供刷新令牌");
         }
 
         try {
             // 1. 验证RefreshToken的JWT签名和过期时间
-            if (jwtUtil.isRefreshToken(refreshToken)) {
-                // 是RefreshToken，继续
-            } else {
-                return Result.error(401, "提供的令牌不是RefreshToken");
+            if (!jwtUtil.isRefreshToken(refreshToken)) {
+                return ResultVO.error(401, "提供的令牌不是RefreshToken");
             }
 
             String username = jwtUtil.getUsernameFromToken(refreshToken);
             if (!jwtUtil.validateToken(refreshToken, username)) {
-                return Result.error(401, "RefreshToken已过期，请重新登录");
+                return ResultVO.error(401, "RefreshToken已过期，请重新登录");
             }
 
             // 2. 并发保护：防止同一RefreshToken被并发使用（旋转机制下并发会导致Token失效）
@@ -322,48 +318,48 @@ public class AuthController {
             Boolean locked = redisTemplate.opsForValue().setIfAbsent(lockKey, "1", 10, java.util.concurrent.TimeUnit.SECONDS);
             if (Boolean.FALSE.equals(locked)) {
                 log.warn("RefreshToken正在被使用（并发刷新），username={}", username);
-                return Result.error(429, "刷新令牌正在使用，请稍后重试");
+                return ResultVO.error(429, "刷新令牌正在使用，请稍后重试");
             }
 
             try {
                 // 3. 验证RefreshToken在Redis中是否有效
                 String validatedUsername = refreshTokenService.validateRefreshToken(refreshToken);
                 if (validatedUsername == null) {
-                    return Result.error(401, "RefreshToken无效或已被吊销，请重新登录");
+                    return ResultVO.error(401, "RefreshToken无效或已被吊销，请重新登录");
                 }
 
                 // 4. 重新查询用户信息和角色权限
-                User user = userService.getUserByUsername(validatedUsername);
-                if (user == null || user.getStatus() != 1) {
-                    return Result.error(401, "用户不存在或已被禁用");
+                UserEntity userEntity = userService.getUserByUsername(validatedUsername);
+                if (userEntity == null || userEntity.getStatus() != 1) {
+                    return ResultVO.error(401, "用户不存在或已被禁用");
                 }
 
-                List<String> roles = rolePermissionMapper.selectRoleCodesByUserId(user.getId());
-                List<String> permissions = rolePermissionMapper.selectPermissionsByUserId(user.getId());
+                List<String> roles = rolePermissionMapper.selectRoleCodesByUserId(userEntity.getId());
+                List<String> permissions = rolePermissionMapper.selectPermissionsByUserId(userEntity.getId());
 
                 // 5. 生成新的AccessToken和RefreshToken（旋转机制：每次刷新都生成新RefreshToken）
-                String newAccessToken = jwtUtil.generateToken(user.getUsername(), user.getTenantId(), roles, permissions);
-                String newRefreshToken = jwtUtil.generateRefreshToken(user.getUsername(), user.getTenantId());
-                refreshTokenService.storeRefreshToken(user.getUsername(), newRefreshToken, jwtProperties.getRefreshExpiration());
+                String newAccessToken = jwtUtil.generateToken(userEntity.getUsername(), userEntity.getTenantId(), roles, permissions);
+                String newRefreshToken = jwtUtil.generateRefreshToken(userEntity.getUsername(), userEntity.getTenantId());
+                refreshTokenService.storeRefreshToken(userEntity.getUsername(), newRefreshToken, jwtProperties.getRefreshExpiration());
 
                 Map<String, Object> data = new HashMap<>();
                 data.put("token", newAccessToken);
                 data.put("refreshToken", newRefreshToken);
                 data.put("tokenExpiresIn", jwtProperties.getExpiration() / 1000);
                 data.put("refreshExpiresIn", jwtProperties.getRefreshExpiration() / 1000);
-                data.put("tenantId", user.getTenantId());
-                data.put("username", user.getUsername());
+                data.put("tenantId", userEntity.getTenantId());
+                data.put("username", userEntity.getUsername());
                 data.put("roles", roles);
                 data.put("permissions", permissions);
 
-                return Result.success("刷新成功", data);
+                return ResultVO.success("刷新成功", data);
             } finally {
                 // 释放并发锁
                 redisTemplate.delete(lockKey);
             }
 
         } catch (Exception e) {
-            return Result.error(401, "RefreshToken刷新失败：" + e.getMessage());
+            return ResultVO.error(401, "RefreshToken刷新失败：" + e.getMessage());
         }
     }
 }

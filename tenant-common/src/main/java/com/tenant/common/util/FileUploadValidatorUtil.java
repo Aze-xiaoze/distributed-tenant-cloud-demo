@@ -11,7 +11,7 @@ import java.util.Set;
  *
  * @author Aze
  */
-public class FileUploadValidator {
+public class FileUploadValidatorUtil {
 
     /**
      * 默认文件大小限制：10 MB

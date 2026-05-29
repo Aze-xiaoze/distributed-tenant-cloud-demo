@@ -33,7 +33,7 @@ public class EmailService {
      * 是否启用邮件发送（有 mailSender 且配置了发件人地址时启用）
      */
     private boolean isMailEnabled() {
-        return mailSender != null && fromEmail != null && !fromEmail.isEmpty();
+        return mailSender == null || fromEmail == null || fromEmail.isEmpty();
     }
 
     /**
@@ -45,7 +45,7 @@ public class EmailService {
      */
     @Async
     public void sendSimpleEmail(String to, String subject, String content) {
-        if (!isMailEnabled()) {
+        if (isMailEnabled()) {
             log.info("邮件未配置，降级为日志: to={}, subject={}", to, subject);
             return;
         }
@@ -72,7 +72,7 @@ public class EmailService {
      */
     @Async
     public void sendHtmlEmail(String to, String subject, String html) {
-        if (!isMailEnabled()) {
+        if (isMailEnabled()) {
             log.info("邮件未配置，降级为日志: to={}, subject={}", to, subject);
             return;
         }

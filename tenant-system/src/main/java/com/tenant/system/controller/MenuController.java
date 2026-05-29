@@ -1,8 +1,8 @@
 package com.tenant.system.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.tenant.common.vo.Result;
-import com.tenant.system.entity.Menu;
+import com.tenant.common.vo.ResultVO;
+import com.tenant.system.entity.MenuEntity;
 import com.tenant.system.service.MenuService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,58 +29,58 @@ public class MenuController {
      * 分页查询菜单列表
      */
     @GetMapping("/page")
-    public Result<Page<Menu>> page(@RequestParam(defaultValue = "1") Long current,
-                                   @RequestParam(defaultValue = "10") Long size) {
-        Page<Menu> page = new Page<>(current, size);
-        Page<Menu> result = menuService.page(page);
-        return Result.success(result);
+    public ResultVO<Page<MenuEntity>> page(@RequestParam(defaultValue = "1") Long current,
+                                           @RequestParam(defaultValue = "10") Long size) {
+        Page<MenuEntity> page = new Page<>(current, size);
+        Page<MenuEntity> result = menuService.page(page);
+        return ResultVO.success(result);
     }
 
     /**
      * 根据ID获取菜单信息
      */
     @GetMapping("/{id}")
-    public Result<Menu> getById(@PathVariable Long id) {
-        Menu menu = menuService.getById(id);
-        if (menu != null) {
-            return Result.success(menu);
+    public ResultVO<MenuEntity> getById(@PathVariable Long id) {
+        MenuEntity menuEntity = menuService.getById(id);
+        if (menuEntity != null) {
+            return ResultVO.success(menuEntity);
         }
-        return Result.error("菜单不存在");
+        return ResultVO.error("菜单不存在");
     }
 
     /**
      * 根据角色ID获取菜单列表
      */
     @GetMapping("/role/{roleId}")
-    public Result<List<Menu>> listByRoleId(@PathVariable Long roleId) {
-        List<Menu> menus = menuService.listByRoleId(roleId);
-        return Result.success(menus);
+    public ResultVO<List<MenuEntity>> listByRoleId(@PathVariable Long roleId) {
+        List<MenuEntity> menuEntities = menuService.listByRoleId(roleId);
+        return ResultVO.success(menuEntities);
     }
 
     /**
      * 新增菜单
      */
     @PostMapping
-    public Result<String> add(@Valid @RequestBody Menu menu) {
-        boolean success = menuService.save(menu);
-        return success ? Result.success("新增成功") : Result.error("新增失败");
+    public ResultVO<String> add(@Valid @RequestBody MenuEntity menuEntity) {
+        boolean success = menuService.save(menuEntity);
+        return success ? ResultVO.success("新增成功") : ResultVO.error("新增失败");
     }
 
     /**
      * 更新菜单
      */
     @PutMapping
-    public Result<String> update(@Valid @RequestBody Menu menu) {
-        boolean success = menuService.updateById(menu);
-        return success ? Result.success("更新成功") : Result.error("更新失败");
+    public ResultVO<String> update(@Valid @RequestBody MenuEntity menuEntity) {
+        boolean success = menuService.updateById(menuEntity);
+        return success ? ResultVO.success("更新成功") : ResultVO.error("更新失败");
     }
 
     /**
      * 删除菜单
      */
     @DeleteMapping("/{id}")
-    public Result<String> delete(@PathVariable Long id) {
+    public ResultVO<String> delete(@PathVariable Long id) {
         boolean success = menuService.removeById(id);
-        return success ? Result.success("删除成功") : Result.error("删除失败");
+        return success ? ResultVO.success("删除成功") : ResultVO.error("删除失败");
     }
 }

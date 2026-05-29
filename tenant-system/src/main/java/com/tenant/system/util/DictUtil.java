@@ -1,6 +1,6 @@
 package com.tenant.system.util;
 
-import com.tenant.system.entity.Dict;
+import com.tenant.system.entity.DictEntity;
 import com.tenant.system.service.DictService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
@@ -21,7 +21,7 @@ import java.util.List;
  * </ul>
  * <p>使用示例：
  * <pre>
- *     List&lt;Dict&gt; items = dictUtil.getDictItems("user_status");
+ *     List&lt;DictEntity&gt; items = dictUtil.getDictItems("user_status");
  *     String label = dictUtil.getDictLabel("user_status", "1");
  * </pre>
  *
@@ -34,9 +34,11 @@ public class DictUtil {
     private static final String CACHE_NAME = "dict";
 
     private final DictService dictService;
+    private final DictUtil self;
 
-    public DictUtil(DictService dictService) {
+    public DictUtil(DictService dictService, DictUtil self) {
         this.dictService = dictService;
+        this.self = self;
     }
 
     /**
@@ -46,13 +48,13 @@ public class DictUtil {
      * @return 字典项列表
      */
     @Cacheable(value = CACHE_NAME, key = "#dictType", unless = "#result == null || #result.isEmpty()")
-    public List<Dict> getDictItems(String dictType) {
+    public List<DictEntity> getDictItems(String dictType) {
         log.debug("缓存未命中，从数据库查询字典: type={}", dictType);
         return dictService.listByDictType(dictType);
     }
 
     /**
-     * 根据字典类型和字典值获取字典标签（带缓存）
+     * 根据字典类型和字典值获取字典标签
      * <p>先查询字典列表（利用缓存），再从列表中匹配值
      *
      * @param dictType  字典类型
@@ -60,10 +62,11 @@ public class DictUtil {
      * @return 字典标签，不存在返回 null
      */
     public String getDictLabel(String dictType, String dictValue) {
-        List<Dict> items = getDictItems(dictType);
-        for (Dict dict : items) {
-            if (dict.getDictValue().equals(dictValue)) {
-                return dict.getDictLabel();
+        // 通过代理对象调用，确保 @Cacheable 生效
+        List<DictEntity> items = self.getDictItems(dictType);
+        for (DictEntity dictEntity : items) {
+            if (dictEntity.getDictValue().equals(dictValue)) {
+                return dictEntity.getDictLabel();
             }
         }
         return null;

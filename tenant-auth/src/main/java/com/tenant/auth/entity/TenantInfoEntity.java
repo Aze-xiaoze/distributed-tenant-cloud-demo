@@ -3,6 +3,7 @@ package com.tenant.auth.entity;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
@@ -15,8 +16,9 @@ import java.time.LocalDateTime;
  */
 @Data
 @TableName("tenants")
-public class TenantInfo implements Serializable {
+public class TenantInfoEntity implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     /** 租户编码 */

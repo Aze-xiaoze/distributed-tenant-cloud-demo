@@ -1,7 +1,7 @@
 package com.tenant.system.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.tenant.system.entity.Notification;
+import com.tenant.system.entity.NotificationEntity;
 import org.apache.ibatis.annotations.Mapper;
 
 /**
@@ -10,5 +10,5 @@ import org.apache.ibatis.annotations.Mapper;
  * @author Aze
  */
 @Mapper
-public interface NotificationMapper extends BaseMapper<Notification> {
+public interface NotificationMapper extends BaseMapper<NotificationEntity> {
 }

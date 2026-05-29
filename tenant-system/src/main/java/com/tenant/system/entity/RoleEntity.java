@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
@@ -17,8 +18,9 @@ import java.time.LocalDateTime;
  */
 @Data
 @TableName("sys_role")
-public class Role implements Serializable {
+public class RoleEntity implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     @TableId(type = IdType.AUTO)

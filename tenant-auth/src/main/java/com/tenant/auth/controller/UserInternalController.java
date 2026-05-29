@@ -2,7 +2,7 @@ package com.tenant.auth.controller;
 
 import com.tenant.api.grpc.user.*;
 import com.tenant.api.grpc.user.UserGrpcServiceGrpc.UserGrpcServiceImplBase;
-import com.tenant.auth.entity.User;
+import com.tenant.auth.entity.UserEntity;
 import com.tenant.auth.service.UserService;
 import io.grpc.stub.StreamObserver;
 import lombok.extern.slf4j.Slf4j;
@@ -36,14 +36,14 @@ public class UserInternalController extends UserGrpcServiceImplBase {
     @Override
     public void getUserByUsername(GetUserByUsernameRequest request,
                                   StreamObserver<UserResponse> responseObserver) {
-        User user = userService.getUserByUsername(request.getUsername());
+        UserEntity userEntity = userService.getUserByUsername(request.getUsername());
 
         UserResponse.Builder responseBuilder = UserResponse.newBuilder();
 
-        if (user != null) {
+        if (userEntity != null) {
             responseBuilder.setCode(200)
                     .setMessage("操作成功")
-                    .setData(buildUserData(user));
+                    .setData(buildUserData(userEntity));
         } else {
             responseBuilder.setCode(400)
                     .setMessage("用户不存在");
@@ -63,14 +63,14 @@ public class UserInternalController extends UserGrpcServiceImplBase {
     @Override
     public void getUserById(GetUserByIdRequest request,
                             StreamObserver<UserResponse> responseObserver) {
-        User user = userService.getUserById(request.getUserId());
+        UserEntity userEntity = userService.getUserById(request.getUserId());
 
         UserResponse.Builder responseBuilder = UserResponse.newBuilder();
 
-        if (user != null) {
+        if (userEntity != null) {
             responseBuilder.setCode(200)
                     .setMessage("操作成功")
-                    .setData(buildUserData(user));
+                    .setData(buildUserData(userEntity));
         } else {
             responseBuilder.setCode(400)
                     .setMessage("用户不存在");
@@ -83,24 +83,24 @@ public class UserInternalController extends UserGrpcServiceImplBase {
     /**
      * 将User实体转换为Protobuf UserData（不含密码字段，安全传输）
      *
-     * @param user 用户实体
+     * @param userEntity 用户实体
      * @return Protobuf UserData
      */
-    private UserData buildUserData(User user) {
+    private UserData buildUserData(UserEntity userEntity) {
         UserData.Builder builder = UserData.newBuilder()
-                .setId(user.getId())
-                .setUsername(user.getUsername() != null ? user.getUsername() : "")
-                .setStatus(user.getStatus() != null ? user.getStatus() : 0)
-                .setTenantId(user.getTenantId() != null ? user.getTenantId() : "");
+                .setId(userEntity.getId())
+                .setUsername(userEntity.getUsername() != null ? userEntity.getUsername() : "")
+                .setStatus(userEntity.getStatus() != null ? userEntity.getStatus() : 0)
+                .setTenantId(userEntity.getTenantId() != null ? userEntity.getTenantId() : "");
 
-        if (user.getNickname() != null) {
-            builder.setNickname(user.getNickname());
+        if (userEntity.getNickname() != null) {
+            builder.setNickname(userEntity.getNickname());
         }
-        if (user.getEmail() != null) {
-            builder.setEmail(user.getEmail());
+        if (userEntity.getEmail() != null) {
+            builder.setEmail(userEntity.getEmail());
         }
-        if (user.getPhone() != null) {
-            builder.setPhone(user.getPhone());
+        if (userEntity.getPhone() != null) {
+            builder.setPhone(userEntity.getPhone());
         }
 
         return builder.build();

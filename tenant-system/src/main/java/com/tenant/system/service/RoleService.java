@@ -1,7 +1,7 @@
 package com.tenant.system.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.tenant.system.entity.Role;
+import com.tenant.system.entity.RoleEntity;
 
 /**
  * 角色服务接口
@@ -10,5 +10,5 @@ import com.tenant.system.entity.Role;
  *
  * @author Aze
  */
-public interface RoleService extends IService<Role> {
+public interface RoleService extends IService<RoleEntity> {
 }

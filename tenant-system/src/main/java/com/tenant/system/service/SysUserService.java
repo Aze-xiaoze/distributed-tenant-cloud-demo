@@ -1,7 +1,7 @@
 package com.tenant.system.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.tenant.system.entity.SysUser;
+import com.tenant.system.entity.SysUserEntity;
 
 /**
  * 系统用户服务接口
@@ -10,7 +10,7 @@ import com.tenant.system.entity.SysUser;
  *
  * @author Aze
  */
-public interface SysUserService extends IService<SysUser> {
+public interface SysUserService extends IService<SysUserEntity> {
 
     /**
      * 根据用户名获取用户信息
@@ -18,5 +18,5 @@ public interface SysUserService extends IService<SysUser> {
      * @param username 用户名
      * @return 用户信息
      */
-    SysUser getUserByUsername(String username);
+    SysUserEntity getUserByUsername(String username);
 }

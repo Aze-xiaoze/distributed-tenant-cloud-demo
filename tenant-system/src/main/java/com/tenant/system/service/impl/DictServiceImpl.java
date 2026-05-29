@@ -2,7 +2,7 @@ package com.tenant.system.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.tenant.system.entity.Dict;
+import com.tenant.system.entity.DictEntity;
 import com.tenant.system.mapper.DictMapper;
 import com.tenant.system.service.DictService;
 import org.springframework.stereotype.Service;
@@ -15,14 +15,14 @@ import java.util.List;
  * @author Aze
  */
 @Service
-public class DictServiceImpl extends ServiceImpl<DictMapper, Dict> implements DictService {
+public class DictServiceImpl extends ServiceImpl<DictMapper, DictEntity> implements DictService {
 
     @Override
-    public List<Dict> listByDictType(String dictType) {
-        LambdaQueryWrapper<Dict> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(Dict::getDictType, dictType)
-                .eq(Dict::getStatus, 1)
-                .orderByAsc(Dict::getSortOrder);
+    public List<DictEntity> listByDictType(String dictType) {
+        LambdaQueryWrapper<DictEntity> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(DictEntity::getDictType, dictType)
+                .eq(DictEntity::getStatus, 1)
+                .orderByAsc(DictEntity::getSortOrder);
         return this.list(wrapper);
     }
 }

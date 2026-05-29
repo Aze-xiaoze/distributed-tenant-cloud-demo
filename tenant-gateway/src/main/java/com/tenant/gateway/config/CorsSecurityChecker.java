@@ -37,13 +37,15 @@ public class CorsSecurityChecker {
         boolean hasWildcard = origins.stream().anyMatch(o -> "*".equals(o.trim()));
 
         if (allowCredentials && hasWildcard) {
-            log.error("\n============================================================\n"
-                    + "CORS 安全配置错误：allow-credentials=true 与 allowed-origins=* 不能同时使用！\n"
-                    + "此组合会导致跨域凭证泄露风险（CSRF-like攻击）。\n"
-                    + "请修改配置：\n"
-                    + "  1. 生产环境：设置明确的 allowed-origins 域名白名单\n"
-                    + "  2. 或关闭 allow-credentials（设为 false）\n"
-                    + "============================================================");
+            log.error("""
+                    
+                    ============================================================
+                    CORS 安全配置错误：allow-credentials=true 与 allowed-origins=* 不能同时使用！
+                    此组合会导致跨域凭证泄露风险（CSRF-like攻击）。
+                    请修改配置：
+                      1. 生产环境：设置明确的 allowed-origins 域名白名单
+                      2. 或关闭 allow-credentials（设为 false）
+                    ============================================================""");
         } else if (hasWildcard) {
             log.warn("CORS 安全警告：allowed-origins 包含通配符 '*'，建议生产环境使用明确的域名白名单");
         }

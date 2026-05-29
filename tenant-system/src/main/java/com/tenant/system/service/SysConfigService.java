@@ -1,7 +1,7 @@
 package com.tenant.system.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.tenant.system.entity.SysConfig;
+import com.tenant.system.entity.SysConfigEntity;
 
 /**
  * 系统配置服务接口
@@ -9,7 +9,7 @@ import com.tenant.system.entity.SysConfig;
  *
  * @author Aze
  */
-public interface SysConfigService extends IService<SysConfig> {
+public interface SysConfigService extends IService<SysConfigEntity> {
 
     /**
      * 根据配置键获取配置值

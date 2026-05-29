@@ -11,8 +11,8 @@ import java.lang.annotation.Target;
  * <p>实现原理：请求首次到达时在 Redis 中写入标识（SET NX EX），重复请求检测到标识存在则拒绝
  * <p>使用示例：
  * <pre>
- *     @Idempotent(key = "'order:create:' + #orderId", expireTime = 5)
- *     public Result&lt;Void&gt; createOrder(@RequestBody OrderRequest request) { ... }
+ *     &#064;Idempotent(key  = "'order:create:' + #orderId", expireTime = 5)
+ *     public ResultVO&lt;Void&gt; createOrder(@RequestBody OrderRequest request) { ... }
  * </pre>
  * <p>SpEL 表达式支持：
  * <ul>

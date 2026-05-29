@@ -1,8 +1,9 @@
 package com.tenant.core.resolver;
 
 import com.tenant.common.annotation.CurrentUser;
-import com.tenant.common.vo.LoginUser;
+import com.tenant.common.vo.LoginUserVO;
 import com.tenant.core.tenant.TenantContextHolder;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.core.MethodParameter;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -17,7 +18,7 @@ import java.util.Set;
 /**
  * 当前登录用户参数解析器
  * <p>自动从 Spring Security 上下文和租户上下文中提取用户信息，
- * 封装为 {@link LoginUser} DTO 注入到标注 {@link CurrentUser} 的 Controller 方法参数中
+ * 封装为 {@link LoginUserVO} DTO 注入到标注 {@link CurrentUser} 的 Controller 方法参数中
  * <p>提取逻辑：
  * <ul>
  *   <li>{@code username} → Authentication.getPrincipal()（JWT subject）</li>
@@ -35,25 +36,25 @@ public class CurrentUserArgumentResolver implements HandlerMethodArgumentResolve
     @Override
     public boolean supportsParameter(MethodParameter parameter) {
         return parameter.hasParameterAnnotation(CurrentUser.class)
-                && parameter.getParameterType().equals(LoginUser.class);
+                && parameter.getParameterType().equals(LoginUserVO.class);
     }
 
     @Override
-    public Object resolveArgument(MethodParameter parameter,
-                                   ModelAndViewContainer mavContainer,
-                                   NativeWebRequest webRequest,
-                                   WebDataBinderFactory binderFactory) {
-        LoginUser loginUser = new LoginUser();
+    public Object resolveArgument(@NotNull MethodParameter parameter,
+                                  ModelAndViewContainer mavContainer,
+                                  @NotNull NativeWebRequest webRequest,
+                                  WebDataBinderFactory binderFactory) {
+        LoginUserVO loginUserVO = new LoginUserVO();
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication != null && authentication.isAuthenticated()
                 && !"anonymousUser".equals(authentication.getPrincipal())) {
-            loginUser.setAuthenticated(true);
-            loginUser.setUsername(authentication.getName());
+            loginUserVO.setAuthenticated(true);
+            loginUserVO.setUsername(authentication.getName());
 
             // 从 TenantContextHolder 获取租户ID（JWT Filter 已设置）
-            loginUser.setTenantId(TenantContextHolder.getCurrentTenantId());
+            loginUserVO.setTenantId(TenantContextHolder.getCurrentTenantId());
 
             // 解析角色和权限
             Set<String> roles = new HashSet<>();
@@ -66,12 +67,12 @@ public class CurrentUserArgumentResolver implements HandlerMethodArgumentResolve
                     permissions.add(auth);
                 }
             });
-            loginUser.setRoles(roles);
-            loginUser.setPermissions(permissions);
+            loginUserVO.setRoles(roles);
+            loginUserVO.setPermissions(permissions);
         } else {
-            loginUser.setAuthenticated(false);
+            loginUserVO.setAuthenticated(false);
         }
 
-        return loginUser;
+        return loginUserVO;
     }
 }

@@ -10,7 +10,7 @@ import java.lang.annotation.Target;
  * <p>标注在方法上，通过 Redis SET NX EX 实现分布式互斥锁，防止并发场景下的资源竞争
  * <p>使用示例：
  * <pre>
- *     @DistributedLock(lockKey = "'order:create:' + #orderId", expireTime = 30)
+ *     &#064;DistributedLock(lockKey  = "'order:create:' + #orderId", expireTime = 30)
  *     public void createOrder(String orderId) { ... }
  * </pre>
  * <p>SpEL 表达式支持：

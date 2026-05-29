@@ -1,7 +1,7 @@
 package com.tenant.system.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.tenant.system.entity.Dict;
+import com.tenant.system.entity.DictEntity;
 
 import java.util.List;
 
@@ -11,7 +11,7 @@ import java.util.List;
  *
  * @author Aze
  */
-public interface DictService extends IService<Dict> {
+public interface DictService extends IService<DictEntity> {
 
     /**
      * 根据字典类型获取字典列表
@@ -19,5 +19,5 @@ public interface DictService extends IService<Dict> {
      * @param dictType 字典类型
      * @return 字典列表
      */
-    List<Dict> listByDictType(String dictType);
+    List<DictEntity> listByDictType(String dictType);
 }

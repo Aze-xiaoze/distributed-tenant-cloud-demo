@@ -3,8 +3,8 @@ package com.tenant.system.service;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.tenant.core.tenant.TenantContextHolder;
-import com.tenant.system.entity.Notification;
-import com.tenant.system.entity.UserNotification;
+import com.tenant.system.entity.NotificationEntity;
+import com.tenant.system.entity.UserNotificationEntity;
 import com.tenant.system.mapper.NotificationMapper;
 import com.tenant.system.mapper.UserNotificationMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * 通知服务
@@ -51,23 +52,23 @@ public class NotificationService {
         String tenantId = TenantContextHolder.getCurrentTenantId();
 
         // 1. 创建通知记录
-        Notification notification = new Notification();
-        notification.setTitle(title);
-        notification.setContent(content);
-        notification.setNotificationType(notificationType);
-        notification.setSender("system");
-        notification.setTenantId(tenantId != null ? tenantId : "default_tenant");
-        notification.setIsRead(0);
-        notificationMapper.insert(notification);
+        NotificationEntity notificationEntity = new NotificationEntity();
+        notificationEntity.setTitle(title);
+        notificationEntity.setContent(content);
+        notificationEntity.setNotificationType(notificationType);
+        notificationEntity.setSender("system");
+        notificationEntity.setTenantId(tenantId != null ? tenantId : "default_tenant");
+        notificationEntity.setIsRead(0);
+        notificationMapper.insert(notificationEntity);
 
         // 2. 创建用户-通知关联记录
         for (Long userId : userIds) {
-            UserNotification userNotification = new UserNotification();
-            userNotification.setNotificationId(notification.getId());
-            userNotification.setUserId(userId);
-            userNotification.setTenantId(tenantId != null ? tenantId : "default_tenant");
-            userNotification.setIsRead(0);
-            userNotificationMapper.insert(userNotification);
+            UserNotificationEntity userNotificationEntity = new UserNotificationEntity();
+            userNotificationEntity.setNotificationId(notificationEntity.getId());
+            userNotificationEntity.setUserId(userId);
+            userNotificationEntity.setTenantId(tenantId != null ? tenantId : "default_tenant");
+            userNotificationEntity.setIsRead(0);
+            userNotificationMapper.insert(userNotificationEntity);
         }
 
         log.info("发送通知: title={}, type={}, tenantId={}, userCount={}",
@@ -84,22 +85,22 @@ public class NotificationService {
      */
     @Transactional(rollbackFor = Exception.class)
     public void sendTenantWarning(String tenantId, String title, String content, List<Long> userIds) {
-        Notification notification = new Notification();
-        notification.setTitle(title);
-        notification.setContent(content);
-        notification.setNotificationType(TYPE_TENANT_WARN);
-        notification.setSender("system");
-        notification.setTenantId(tenantId);
-        notification.setIsRead(0);
-        notificationMapper.insert(notification);
+        NotificationEntity notificationEntity = new NotificationEntity();
+        notificationEntity.setTitle(title);
+        notificationEntity.setContent(content);
+        notificationEntity.setNotificationType(TYPE_TENANT_WARN);
+        notificationEntity.setSender("system");
+        notificationEntity.setTenantId(tenantId);
+        notificationEntity.setIsRead(0);
+        notificationMapper.insert(notificationEntity);
 
         for (Long userId : userIds) {
-            UserNotification userNotification = new UserNotification();
-            userNotification.setNotificationId(notification.getId());
-            userNotification.setUserId(userId);
-            userNotification.setTenantId(tenantId);
-            userNotification.setIsRead(0);
-            userNotificationMapper.insert(userNotification);
+            UserNotificationEntity userNotificationEntity = new UserNotificationEntity();
+            userNotificationEntity.setNotificationId(notificationEntity.getId());
+            userNotificationEntity.setUserId(userId);
+            userNotificationEntity.setTenantId(tenantId);
+            userNotificationEntity.setIsRead(0);
+            userNotificationMapper.insert(userNotificationEntity);
         }
 
         log.warn("租户预警: tenantId={}, title={}", tenantId, title);
@@ -114,25 +115,25 @@ public class NotificationService {
      * @param isRead   已读状态（null表示全部）
      * @return 分页结果
      */
-    public Page<Notification> getUserNotifications(Long userId, Long current, Long size, Integer isRead) {
+    public Page<NotificationEntity> getUserNotifications(Long userId, Long current, Long size, Integer isRead) {
         // 先查用户关联表获取 notificationId 列表
-        LambdaQueryWrapper<UserNotification> userNotiWrapper = new LambdaQueryWrapper<>();
-        userNotiWrapper.eq(UserNotification::getUserId, userId);
+        LambdaQueryWrapper<UserNotificationEntity> userNotiWrapper = new LambdaQueryWrapper<>();
+        userNotiWrapper.eq(UserNotificationEntity::getUserId, userId);
         if (isRead != null) {
-            userNotiWrapper.eq(UserNotification::getIsRead, isRead);
+            userNotiWrapper.eq(UserNotificationEntity::getIsRead, isRead);
         }
-        userNotiWrapper.orderByDesc(UserNotification::getCreateTime);
+        userNotiWrapper.orderByDesc(UserNotificationEntity::getCreateTime);
 
-        Page<UserNotification> userNotiPage = userNotificationMapper.selectPage(
+        Page<UserNotificationEntity> userNotiPage = userNotificationMapper.selectPage(
                 new Page<>(current, size), userNotiWrapper);
 
         // 转换为通知分页
-        Page<Notification> result = new Page<>(current, size, userNotiPage.getTotal());
-        List<Notification> notifications = userNotiPage.getRecords().stream()
+        Page<NotificationEntity> result = new Page<>(current, size, userNotiPage.getTotal());
+        List<NotificationEntity> notificationEntities = userNotiPage.getRecords().stream()
                 .map(un -> notificationMapper.selectById(un.getNotificationId()))
-                .filter(n -> n != null)
+                .filter(Objects::nonNull)
                 .toList();
-        result.setRecords(notifications);
+        result.setRecords(notificationEntities);
         return result;
     }
 
@@ -147,17 +148,17 @@ public class NotificationService {
         String tenantId = TenantContextHolder.getCurrentTenantId();
 
         // 更新用户-通知关联表
-        LambdaQueryWrapper<UserNotification> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(UserNotification::getUserId, userId)
-                .eq(UserNotification::getNotificationId, notificationId)
-                .eq(UserNotification::getIsRead, 0);
-        UserNotification update = new UserNotification();
+        LambdaQueryWrapper<UserNotificationEntity> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(UserNotificationEntity::getUserId, userId)
+                .eq(UserNotificationEntity::getNotificationId, notificationId)
+                .eq(UserNotificationEntity::getIsRead, 0);
+        UserNotificationEntity update = new UserNotificationEntity();
         update.setIsRead(1);
         update.setReadTime(LocalDateTime.now());
         userNotificationMapper.update(update, wrapper);
 
         // 更新通知表已读状态
-        Notification notiUpdate = new Notification();
+        NotificationEntity notiUpdate = new NotificationEntity();
         notiUpdate.setId(notificationId);
         notiUpdate.setIsRead(1);
         notiUpdate.setReadTime(LocalDateTime.now());
@@ -183,9 +184,9 @@ public class NotificationService {
      * @return 未读数量
      */
     public long getUnreadCount(Long userId) {
-        LambdaQueryWrapper<UserNotification> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(UserNotification::getUserId, userId)
-                .eq(UserNotification::getIsRead, 0);
+        LambdaQueryWrapper<UserNotificationEntity> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(UserNotificationEntity::getUserId, userId)
+                .eq(UserNotificationEntity::getIsRead, 0);
         return userNotificationMapper.selectCount(wrapper);
     }
 
@@ -197,8 +198,8 @@ public class NotificationService {
     @Transactional(rollbackFor = Exception.class)
     public void deleteNotification(Long notificationId) {
         // 删除用户关联
-        LambdaQueryWrapper<UserNotification> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(UserNotification::getNotificationId, notificationId);
+        LambdaQueryWrapper<UserNotificationEntity> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(UserNotificationEntity::getNotificationId, notificationId);
         userNotificationMapper.delete(wrapper);
 
         // 删除通知本身
@@ -215,13 +216,13 @@ public class NotificationService {
         LocalDateTime expireTime = LocalDateTime.now().minusDays(7);
 
         // 查询过期的已读通知
-        LambdaQueryWrapper<Notification> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(Notification::getIsRead, 1)
-                .lt(Notification::getReadTime, expireTime);
+        LambdaQueryWrapper<NotificationEntity> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(NotificationEntity::getIsRead, 1)
+                .lt(NotificationEntity::getReadTime, expireTime);
 
-        List<Notification> expiredList = notificationMapper.selectList(wrapper);
-        for (Notification notification : expiredList) {
-            deleteNotification(notification.getId());
+        List<NotificationEntity> expiredList = notificationMapper.selectList(wrapper);
+        for (NotificationEntity notificationEntity : expiredList) {
+            deleteNotification(notificationEntity.getId());
         }
 
         log.info("清理过期通知: count={}", expiredList.size());

@@ -5,6 +5,7 @@ import com.tenant.core.tenant.TenantEntity;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
@@ -18,8 +19,9 @@ import java.time.LocalDateTime;
  */
 @Data
 @TableName("sys_user")
-public class SysUser implements TenantEntity, Serializable {
+public class SysUserEntity implements TenantEntity, Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     @TableId(type = IdType.AUTO)

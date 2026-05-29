@@ -2,7 +2,9 @@ package com.tenant.auth.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import lombok.Data;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 /**
@@ -12,8 +14,10 @@ import java.io.Serializable;
  *
  * @author Aze
  */
-public class LoginRequest implements Serializable {
+@Data
+public class LoginRequestDTO implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     /**
@@ -29,20 +33,4 @@ public class LoginRequest implements Serializable {
     @NotBlank(message = "密码不能为空")
     @Size(min = 6, max = 100, message = "密码长度应在6-100之间")
     private String password;
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
 }

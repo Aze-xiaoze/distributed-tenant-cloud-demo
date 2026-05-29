@@ -11,9 +11,9 @@ import org.springframework.core.io.buffer.DefaultDataBufferFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpRequestDecorator;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Flux;
@@ -60,7 +60,7 @@ public class XssFilter implements GlobalFilter, Ordered {
 
         // 1. 检查URL查询参数中的XSS
         String query = request.getURI().getRawQuery();
-        if (query != null && containsXss(query)) {
+        if (containsXss(query)) {
             log.warn("XSS攻击检测：URL参数包含恶意脚本，path={}, query={}", path, sanitizeLog(query));
             exchange.getResponse().setStatusCode(HttpStatus.BAD_REQUEST);
             exchange.getResponse().getHeaders().add("Content-Type", "application/json;charset=UTF-8");
@@ -99,31 +99,38 @@ public class XssFilter implements GlobalFilter, Ordered {
                     if (containsXss(body)) {
                         log.warn("XSS攻击检测：请求体包含恶意脚本，path={}", path);
                         String cleanedBody = cleanXss(body);
-                        byte[] cleanedBytes = cleanedBody.getBytes(StandardCharsets.UTF_8);
-
-                        ServerHttpRequestDecorator decorator = new ServerHttpRequestDecorator(request) {
-                            @Override
-                            public Flux<DataBuffer> getBody() {
-                                DataBuffer buffer = new DefaultDataBufferFactory()
-                                        .wrap(cleanedBytes);
-                                return Flux.just(buffer);
-                            }
-
-                            @Override
-                            public HttpHeaders getHeaders() {
-                                HttpHeaders headers = new HttpHeaders();
-                                headers.putAll(super.getHeaders());
-                                headers.setContentLength(cleanedBytes.length);
-                                return headers;
-                            }
-                        };
+                        ServerHttpRequestDecorator decorator = getServerHttpRequestDecorator(cleanedBody, request);
 
                         return chain.filter(addSecurityHeaders(exchange.mutate().request(decorator).build()));
                     }
 
                     return chain.filter(addSecurityHeaders(exchange));
                 })
-                .switchIfEmpty(chain.filter(addSecurityHeaders(exchange)));
+                // 如果请求体为空（empty Mono），直接继续过滤器链
+                .then(chain.filter(addSecurityHeaders(exchange)));
+    }
+
+    private static ServerHttpRequestDecorator getServerHttpRequestDecorator(String cleanedBody, ServerHttpRequest request) {
+        byte[] cleanedBytes = cleanedBody.getBytes(StandardCharsets.UTF_8);
+
+        return new ServerHttpRequestDecorator(request) {
+            @Override
+            @NonNull
+            public Flux<DataBuffer> getBody() {
+                DataBuffer buffer = new DefaultDataBufferFactory()
+                        .wrap(cleanedBytes);
+                return Flux.just(buffer);
+            }
+
+            @Override
+            @NonNull
+            public HttpHeaders getHeaders() {
+                HttpHeaders headers = new HttpHeaders();
+                headers.putAll(super.getHeaders());
+                headers.setContentLength(cleanedBytes.length);
+                return headers;
+            }
+        };
     }
 
     /**

@@ -86,6 +86,7 @@ public class DistributedLockAspect {
      * @param waitTime   等待时间（毫秒）
      * @return 是否成功获取锁
      */
+    @SuppressWarnings("BusyWait")
     private boolean tryLock(String lockKey, String lockValue, long expireTime, long waitTime) {
         if (waitTime <= 0) {
             return Boolean.TRUE.equals(
@@ -93,15 +94,19 @@ public class DistributedLockAspect {
         }
 
         long startTime = System.currentTimeMillis();
+        // 使用指数退避策略，减少 Redis 压力
+        long sleepTime = 50;
         while (System.currentTimeMillis() - startTime < waitTime) {
             Boolean result = redisTemplate.opsForValue()
                     .setIfAbsent(lockKey, lockValue, expireTime, TimeUnit.SECONDS);
             if (Boolean.TRUE.equals(result)) {
                 return true;
             }
-            // 短暂休眠，避免 CPU 过载
+
             try {
-                Thread.sleep(50);
+                Thread.sleep(sleepTime);
+                // 指数退避：每次等待时间翻倍，最大 500ms
+                sleepTime = Math.min(sleepTime * 2, 500);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 return false;

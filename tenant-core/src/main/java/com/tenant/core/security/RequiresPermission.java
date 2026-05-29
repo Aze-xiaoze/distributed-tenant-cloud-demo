@@ -10,7 +10,7 @@ import java.lang.annotation.*;
  * <pre>
  * &#64;RequiresPermission("system:user:add")
  * &#64;PostMapping("/add")
- * public Result&lt;String&gt; addUser() { ... }
+ * public ResultVO&lt;String&gt; addUser() { ... }
  * </pre>
  * <p>权限来源：从请求头X-User-Permissions中获取（由网关从JWT解析后设置），
  * 或从Spring Security上下文的GrantedAuthority中提取

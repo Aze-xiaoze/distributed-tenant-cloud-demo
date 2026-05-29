@@ -22,7 +22,7 @@ import org.springframework.context.annotation.Configuration;
 public class MinioConfig {
 
     /**
-     * MinIO 服务地址（如 http://127.0.0.1:9000）
+     * MinIO 服务地址（如 <a href="http://127.0.0.1:9000">...</a>）
      */
     private String url;
 

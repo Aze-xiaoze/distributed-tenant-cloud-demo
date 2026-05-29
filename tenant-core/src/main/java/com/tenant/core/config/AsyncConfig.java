@@ -1,5 +1,6 @@
 package com.tenant.core.config;
 
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.MDC;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -7,7 +8,6 @@ import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import java.util.Map;
-import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadPoolExecutor;
 
@@ -70,8 +70,9 @@ public class AsyncConfig {
      * <p>原理：在任务提交时捕获主线程 MDC，在异步线程执行时恢复，执行完毕后清理
      */
     private static class MdcTaskDecorator implements org.springframework.core.task.TaskDecorator {
+        @NotNull
         @Override
-        public Runnable decorate(Runnable runnable) {
+        public Runnable decorate(@NotNull Runnable runnable) {
             // 在主线程中捕获 MDC 上下文
             Map<String, String> contextMap = MDC.getCopyOfContextMap();
             return () -> {

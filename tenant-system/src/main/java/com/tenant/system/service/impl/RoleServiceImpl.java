@@ -1,7 +1,7 @@
 package com.tenant.system.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.tenant.system.entity.Role;
+import com.tenant.system.entity.RoleEntity;
 import com.tenant.system.mapper.RoleMapper;
 import com.tenant.system.service.RoleService;
 import org.springframework.stereotype.Service;
@@ -13,5 +13,5 @@ import org.springframework.stereotype.Service;
  * @author Aze
  */
 @Service
-public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements RoleService {
+public class RoleServiceImpl extends ServiceImpl<RoleMapper, RoleEntity> implements RoleService {
 }

@@ -1,7 +1,7 @@
 package com.tenant.system.controller;
 
-import com.tenant.common.util.FileUploadValidator;
-import com.tenant.common.vo.Result;
+import com.tenant.common.util.FileUploadValidatorUtil;
+import com.tenant.common.vo.ResultVO;
 import com.tenant.core.storage.FileStorageService;
 import io.minio.StatObjectResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -45,16 +45,16 @@ public class FileController {
      */
     @PostMapping("/upload")
     @Operation(summary = "上传文件", description = "上传文件到MinIO，自动按租户隔离存储")
-    public Result<Map<String, Object>> upload(
+    public ResultVO<Map<String, Object>> upload(
             @Parameter(description = "上传的文件") @RequestParam("file") MultipartFile file,
             @Parameter(description = "文件分类") @RequestParam(value = "category", defaultValue = "general") String category) {
         if (fileStorageService == null) {
-            return Result.error("文件存储服务未配置");
+            return ResultVO.error("文件存储服务未配置");
         }
 
-        String validateMsg = FileUploadValidator.validate(file);
+        String validateMsg = FileUploadValidatorUtil.validate(file);
         if (validateMsg != null) {
-            return Result.error(validateMsg);
+            return ResultVO.error(validateMsg);
         }
 
         try {
@@ -68,11 +68,11 @@ public class FileController {
             data.put("contentType", file.getContentType());
             data.put("fileUrl", fileUrl);
 
-            return Result.success("上传成功", data);
+            return ResultVO.success("上传成功", data);
         } catch (IllegalArgumentException e) {
-            return Result.error(e.getMessage());
+            return ResultVO.error(e.getMessage());
         } catch (Exception e) {
-            return Result.error("文件上传失败：" + e.getMessage());
+            return ResultVO.error("文件上传失败：" + e.getMessage());
         }
     }
 
@@ -115,17 +115,17 @@ public class FileController {
      */
     @GetMapping("/preview-url")
     @Operation(summary = "获取文件预览URL", description = "获取文件临时访问URL（预签名，1小时有效）")
-    public Result<String> getPreviewUrl(
+    public ResultVO<String> getPreviewUrl(
             @Parameter(description = "文件存储路径") @RequestParam String objectName) {
         if (fileStorageService == null) {
-            return Result.error("文件存储服务未配置");
+            return ResultVO.error("文件存储服务未配置");
         }
 
         try {
             String url = fileStorageService.getFileUrl(objectName);
-            return Result.success(url);
+            return ResultVO.success(url);
         } catch (Exception e) {
-            return Result.error("获取文件URL失败：" + e.getMessage());
+            return ResultVO.error("获取文件URL失败：" + e.getMessage());
         }
     }
 
@@ -137,17 +137,17 @@ public class FileController {
      */
     @DeleteMapping
     @Operation(summary = "删除文件", description = "根据文件路径删除文件")
-    public Result<String> delete(
+    public ResultVO<String> delete(
             @Parameter(description = "文件存储路径") @RequestParam String objectName) {
         if (fileStorageService == null) {
-            return Result.error("文件存储服务未配置");
+            return ResultVO.error("文件存储服务未配置");
         }
 
         try {
             fileStorageService.deleteFile(objectName);
-            return Result.success("删除成功");
+            return ResultVO.success("删除成功");
         } catch (Exception e) {
-            return Result.error("文件删除失败：" + e.getMessage());
+            return ResultVO.error("文件删除失败：" + e.getMessage());
         }
     }
 }

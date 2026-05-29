@@ -3,6 +3,7 @@ package com.tenant.common.vo;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import lombok.Data;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.List;
 
@@ -14,7 +15,7 @@ import java.util.List;
  * <pre>{@code
  * // Controller 中
  * IPage<SysUser> page = userService.page(query);
- * return Result.success(PageVO.of(page));
+ * return ResultVO.success(PageVO.of(page));
  * }</pre>
  * <p>返回 JSON 结构：
  * <pre>{@code
@@ -37,6 +38,7 @@ import java.util.List;
 @Data
 public class PageVO<T> implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     /**

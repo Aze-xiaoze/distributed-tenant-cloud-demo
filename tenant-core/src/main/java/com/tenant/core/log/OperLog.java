@@ -1,5 +1,7 @@
 package com.tenant.core.log;
 
+import lombok.Getter;
+
 import java.lang.annotation.*;
 
 /**
@@ -9,7 +11,7 @@ import java.lang.annotation.*;
  * <pre>
  * &#64;OperLog(title = "用户管理", operationType = OperLog.OperationType.INSERT)
  * &#64;PostMapping("/user")
- * public Result&lt;String&gt; addUser(@RequestBody User user) { ... }
+ * public ResultVO&lt;String&gt; addUser(@RequestBody User user) { ... }
  * </pre>
  *
  * @author Aze
@@ -47,6 +49,7 @@ public @interface OperLog {
     /**
      * 操作类型枚举
      */
+    @Getter
     enum OperationType {
         /** 查询 */
         QUERY(4),
@@ -67,8 +70,5 @@ public @interface OperLog {
             this.code = code;
         }
 
-        public int getCode() {
-            return code;
-        }
     }
 }

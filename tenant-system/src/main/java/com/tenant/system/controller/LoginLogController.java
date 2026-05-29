@@ -2,7 +2,7 @@ package com.tenant.system.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.tenant.common.vo.Result;
+import com.tenant.common.vo.ResultVO;
 import com.tenant.core.log.LoginLogEntity;
 import com.tenant.system.service.LoginLogQueryService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -30,14 +30,14 @@ public class LoginLogController {
      */
     @GetMapping("/page")
     @Operation(summary = "分页查询登录日志", description = "支持按用户名、租户ID、登录状态筛选")
-    public Result<IPage<LoginLogEntity>> page(
+    public ResultVO<IPage<LoginLogEntity>> page(
             @RequestParam(defaultValue = "1") Long current,
             @RequestParam(defaultValue = "10") Long size,
             @Parameter(description = "用户名") @RequestParam(required = false) String username,
             @Parameter(description = "租户ID") @RequestParam(required = false) String tenantId,
             @Parameter(description = "登录状态：1-成功，0-失败") @RequestParam(required = false) Integer status) {
         Page<LoginLogEntity> page = new Page<>(current, size);
-        return Result.success(loginLogQueryService.queryPage(page, username, tenantId, status));
+        return ResultVO.success(loginLogQueryService.queryPage(page, username, tenantId, status));
     }
 
     /**
@@ -45,9 +45,9 @@ public class LoginLogController {
      */
     @GetMapping("/{id}")
     @Operation(summary = "登录日志详情", description = "根据ID获取登录日志详情")
-    public Result<LoginLogEntity> getById(@PathVariable Long id) {
+    public ResultVO<LoginLogEntity> getById(@PathVariable Long id) {
         LoginLogEntity log = loginLogQueryService.getById(id);
-        return log != null ? Result.success(log) : Result.error("日志不存在");
+        return log != null ? ResultVO.success(log) : ResultVO.error("日志不存在");
     }
 
     /**
@@ -55,9 +55,9 @@ public class LoginLogController {
      */
     @DeleteMapping("/{id}")
     @Operation(summary = "删除登录日志", description = "根据ID删除登录日志")
-    public Result<String> delete(@PathVariable Long id) {
+    public ResultVO<String> delete(@PathVariable Long id) {
         boolean success = loginLogQueryService.removeById(id);
-        return success ? Result.success("删除成功") : Result.error("删除失败");
+        return success ? ResultVO.success("删除成功") : ResultVO.error("删除失败");
     }
 
     /**
@@ -65,8 +65,8 @@ public class LoginLogController {
      */
     @DeleteMapping("/batch")
     @Operation(summary = "批量删除登录日志", description = "根据ID列表批量删除登录日志")
-    public Result<String> deleteBatch(@RequestParam java.util.List<Long> ids) {
+    public ResultVO<String> deleteBatch(@RequestParam java.util.List<Long> ids) {
         boolean success = loginLogQueryService.removeByIds(ids);
-        return success ? Result.success("批量删除成功") : Result.error("批量删除失败");
+        return success ? ResultVO.success("批量删除成功") : ResultVO.error("批量删除失败");
     }
 }

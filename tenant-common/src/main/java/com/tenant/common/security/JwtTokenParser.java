@@ -55,8 +55,12 @@ public class JwtTokenParser {
             result.setTenantId(claims.get("tenantId", String.class));
             result.setJti(claims.getId());
             result.setTokenType(claims.get("tokenType", String.class));
-            result.setRoles(claims.get("roles", List.class));
-            result.setPermissions(claims.get("permissions", List.class));
+            @SuppressWarnings("unchecked")
+            List<String> roles = claims.get("roles", List.class);
+            result.setRoles(roles);
+            @SuppressWarnings("unchecked")
+            List<String> permissions = claims.get("permissions", List.class);
+            result.setPermissions(permissions);
 
             Date issuedAt = claims.getIssuedAt();
             if (issuedAt != null) {
@@ -182,7 +186,6 @@ public class JwtTokenParser {
      * @param token JWT令牌
      * @return 角色列表，解析失败返回null
      */
-    @SuppressWarnings("unchecked")
     public List<String> getRoles(String token) {
         JwtTokenClaims claims = parseToken(token);
         return claims != null ? claims.getRoles() : null;
@@ -194,7 +197,6 @@ public class JwtTokenParser {
      * @param token JWT令牌
      * @return 权限列表，解析失败返回null
      */
-    @SuppressWarnings("unchecked")
     public List<String> getPermissions(String token) {
         JwtTokenClaims claims = parseToken(token);
         return claims != null ? claims.getPermissions() : null;

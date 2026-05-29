@@ -1,8 +1,8 @@
 package com.tenant.system.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.tenant.common.vo.Result;
-import com.tenant.system.entity.Role;
+import com.tenant.common.vo.ResultVO;
+import com.tenant.system.entity.RoleEntity;
 import com.tenant.system.service.RoleService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,11 +33,11 @@ public class RoleController {
      * @return 分页结果
      */
     @GetMapping("/page")
-    public Result<Page<Role>> page(@RequestParam(defaultValue = "1") Long current,
-                                   @RequestParam(defaultValue = "10") Long size) {
-        Page<Role> page = new Page<>(current, size);
-        Page<Role> result = roleService.page(page);
-        return Result.success(result);
+    public ResultVO<Page<RoleEntity>> page(@RequestParam(defaultValue = "1") Long current,
+                                           @RequestParam(defaultValue = "10") Long size) {
+        Page<RoleEntity> page = new Page<>(current, size);
+        Page<RoleEntity> result = roleService.page(page);
+        return ResultVO.success(result);
     }
 
     /**
@@ -47,36 +47,36 @@ public class RoleController {
      * @return 角色信息
      */
     @GetMapping("/{id}")
-    public Result<Role> getById(@PathVariable Long id) {
-        Role role = roleService.getById(id);
-        if (role != null) {
-            return Result.success(role);
+    public ResultVO<RoleEntity> getById(@PathVariable Long id) {
+        RoleEntity roleEntity = roleService.getById(id);
+        if (roleEntity != null) {
+            return ResultVO.success(roleEntity);
         }
-        return Result.error("角色不存在");
+        return ResultVO.error("角色不存在");
     }
 
     /**
      * 新增角色
      *
-     * @param role 角色信息
+     * @param roleEntity 角色信息
      * @return 操作结果
      */
     @PostMapping
-    public Result<String> add(@Valid @RequestBody Role role) {
-        boolean success = roleService.save(role);
-        return success ? Result.success("新增成功") : Result.error("新增失败");
+    public ResultVO<String> add(@Valid @RequestBody RoleEntity roleEntity) {
+        boolean success = roleService.save(roleEntity);
+        return success ? ResultVO.success("新增成功") : ResultVO.error("新增失败");
     }
 
     /**
      * 更新角色
      *
-     * @param role 角色信息
+     * @param roleEntity 角色信息
      * @return 操作结果
      */
     @PutMapping
-    public Result<String> update(@Valid @RequestBody Role role) {
-        boolean success = roleService.updateById(role);
-        return success ? Result.success("更新成功") : Result.error("更新失败");
+    public ResultVO<String> update(@Valid @RequestBody RoleEntity roleEntity) {
+        boolean success = roleService.updateById(roleEntity);
+        return success ? ResultVO.success("更新成功") : ResultVO.error("更新失败");
     }
 
     /**
@@ -86,8 +86,8 @@ public class RoleController {
      * @return 操作结果
      */
     @DeleteMapping("/{id}")
-    public Result<String> delete(@PathVariable Long id) {
+    public ResultVO<String> delete(@PathVariable Long id) {
         boolean success = roleService.removeById(id);
-        return success ? Result.success("删除成功") : Result.error("删除失败");
+        return success ? ResultVO.success("删除成功") : ResultVO.error("删除失败");
     }
 }

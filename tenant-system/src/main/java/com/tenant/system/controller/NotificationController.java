@@ -1,9 +1,9 @@
 package com.tenant.system.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.tenant.common.vo.Result;
+import com.tenant.common.vo.ResultVO;
 import com.tenant.core.tenant.TenantContextHolder;
-import com.tenant.system.entity.Notification;
+import com.tenant.system.entity.NotificationEntity;
 import com.tenant.system.service.NotificationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -38,16 +38,16 @@ public class NotificationController {
      */
     @GetMapping("/page")
     @Operation(summary = "查询通知列表", description = "分页查询当前用户的通知，可按已读状态筛选")
-    public Result<Page<Notification>> page(
+    public ResultVO<Page<NotificationEntity>> page(
             @Parameter(description = "当前页") @RequestParam(defaultValue = "1") Long current,
             @Parameter(description = "每页大小") @RequestParam(defaultValue = "10") Long size,
             @Parameter(description = "已读状态") @RequestParam(required = false) Integer isRead) {
         Long userId = getCurrentUserId();
         if (userId == null) {
-            return Result.error(401, "未获取到当前用户信息");
+            return ResultVO.error(401, "未获取到当前用户信息");
         }
-        Page<Notification> result = notificationService.getUserNotifications(userId, current, size, isRead);
-        return Result.success(result);
+        Page<NotificationEntity> result = notificationService.getUserNotifications(userId, current, size, isRead);
+        return ResultVO.success(result);
     }
 
     /**
@@ -57,13 +57,13 @@ public class NotificationController {
      */
     @GetMapping("/unread-count")
     @Operation(summary = "未读通知数量", description = "获取当前用户的未读通知数量")
-    public Result<Long> unreadCount() {
+    public ResultVO<Long> unreadCount() {
         Long userId = getCurrentUserId();
         if (userId == null) {
-            return Result.error(401, "未获取到当前用户信息");
+            return ResultVO.error(401, "未获取到当前用户信息");
         }
         long count = notificationService.getUnreadCount(userId);
-        return Result.success(count);
+        return ResultVO.success(count);
     }
 
     /**
@@ -74,14 +74,14 @@ public class NotificationController {
      */
     @PutMapping("/{notificationId}/read")
     @Operation(summary = "标记已读", description = "标记指定通知为已读")
-    public Result<String> markAsRead(
+    public ResultVO<String> markAsRead(
             @Parameter(description = "通知ID") @PathVariable Long notificationId) {
         Long userId = getCurrentUserId();
         if (userId == null) {
-            return Result.error(401, "未获取到当前用户信息");
+            return ResultVO.error(401, "未获取到当前用户信息");
         }
         notificationService.markAsRead(userId, notificationId);
-        return Result.success("标记成功");
+        return ResultVO.success("标记成功");
     }
 
     /**
@@ -91,14 +91,14 @@ public class NotificationController {
      */
     @PutMapping("/read-all")
     @Operation(summary = "全部标记已读", description = "将当前用户的所有未读通知标记为已读")
-    public Result<String> markAllAsRead() {
+    public ResultVO<String> markAllAsRead() {
         Long userId = getCurrentUserId();
         String tenantId = TenantContextHolder.getCurrentTenantId();
         if (userId == null) {
-            return Result.error(401, "未获取到当前用户信息");
+            return ResultVO.error(401, "未获取到当前用户信息");
         }
         int count = notificationService.markAllAsRead(userId, tenantId);
-        return Result.success("已标记 " + count + " 条通知为已读");
+        return ResultVO.success("已标记 " + count + " 条通知为已读");
     }
 
     /**
@@ -109,10 +109,10 @@ public class NotificationController {
      */
     @DeleteMapping("/{notificationId}")
     @Operation(summary = "删除通知", description = "删除指定通知")
-    public Result<String> delete(
+    public ResultVO<String> delete(
             @Parameter(description = "通知ID") @PathVariable Long notificationId) {
         notificationService.deleteNotification(notificationId);
-        return Result.success("删除成功");
+        return ResultVO.success("删除成功");
     }
 
     /**

@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.*;
 import com.tenant.core.tenant.TenantEntity;
 import lombok.Data;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
@@ -16,8 +17,9 @@ import java.time.LocalDateTime;
  */
 @Data
 @TableName("sys_user_role")
-public class UserRole implements TenantEntity, Serializable {
+public class UserRoleEntity implements TenantEntity, Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     @TableId(type = IdType.AUTO)

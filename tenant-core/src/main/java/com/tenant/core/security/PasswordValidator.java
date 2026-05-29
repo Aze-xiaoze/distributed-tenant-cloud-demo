@@ -1,5 +1,7 @@
 package com.tenant.core.security;
 
+import lombok.Getter;
+
 import java.util.regex.Pattern;
 
 /**
@@ -123,20 +125,17 @@ public class PasswordValidator {
      */
     public static class PasswordValidationResult {
 
+        @Getter
         private boolean valid = true;
 
         private final StringBuilder errors = new StringBuilder();
 
         public void addError(String error) {
             this.valid = false;
-            if (errors.length() > 0) {
+            if (!errors.isEmpty()) {
                 errors.append("; ");
             }
             errors.append(error);
-        }
-
-        public boolean isValid() {
-            return valid;
         }
 
         public String getErrors() {

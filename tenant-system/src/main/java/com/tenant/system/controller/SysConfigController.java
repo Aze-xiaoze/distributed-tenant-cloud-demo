@@ -2,8 +2,8 @@ package com.tenant.system.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.tenant.common.vo.Result;
-import com.tenant.system.entity.SysConfig;
+import com.tenant.common.vo.ResultVO;
+import com.tenant.system.entity.SysConfigEntity;
 import com.tenant.system.service.SysConfigService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -33,15 +33,15 @@ public class SysConfigController {
      */
     @GetMapping("/page")
     @Operation(summary = "分页查询配置", description = "支持按配置键模糊查询")
-    public Result<Page<SysConfig>> page(
+    public ResultVO<Page<SysConfigEntity>> page(
             @RequestParam(defaultValue = "1") Long current,
             @RequestParam(defaultValue = "10") Long size,
             @Parameter(description = "配置键模糊查询") @RequestParam(required = false) String configKey) {
-        Page<SysConfig> page = new Page<>(current, size);
-        LambdaQueryWrapper<SysConfig> wrapper = new LambdaQueryWrapper<>();
-        wrapper.like(configKey != null && !configKey.isEmpty(), SysConfig::getConfigKey, configKey)
-                .orderByDesc(SysConfig::getCreateTime);
-        return Result.success(sysConfigService.page(page, wrapper));
+        Page<SysConfigEntity> page = new Page<>(current, size);
+        LambdaQueryWrapper<SysConfigEntity> wrapper = new LambdaQueryWrapper<>();
+        wrapper.like(configKey != null && !configKey.isEmpty(), SysConfigEntity::getConfigKey, configKey)
+                .orderByDesc(SysConfigEntity::getCreateTime);
+        return ResultVO.success(sysConfigService.page(page, wrapper));
     }
 
     /**
@@ -49,12 +49,12 @@ public class SysConfigController {
      */
     @GetMapping("/key/{configKey}")
     @Operation(summary = "根据键获取配置值", description = "根据配置键查询对应的配置值")
-    public Result<String> getByKey(@PathVariable String configKey) {
+    public ResultVO<String> getByKey(@PathVariable String configKey) {
         String value = sysConfigService.getConfigValue(configKey);
         if (value != null) {
-            return Result.success(value);
+            return ResultVO.success(value);
         }
-        return Result.error("配置项不存在");
+        return ResultVO.error("配置项不存在");
     }
 
     /**
@@ -62,12 +62,12 @@ public class SysConfigController {
      */
     @GetMapping("/{id}")
     @Operation(summary = "配置详情", description = "根据ID获取配置详情")
-    public Result<SysConfig> getById(@PathVariable Long id) {
-        SysConfig config = sysConfigService.getById(id);
+    public ResultVO<SysConfigEntity> getById(@PathVariable Long id) {
+        SysConfigEntity config = sysConfigService.getById(id);
         if (config != null) {
-            return Result.success(config);
+            return ResultVO.success(config);
         }
-        return Result.error("配置不存在");
+        return ResultVO.error("配置不存在");
     }
 
     /**
@@ -75,9 +75,9 @@ public class SysConfigController {
      */
     @PostMapping
     @Operation(summary = "新增配置", description = "新增系统配置项")
-    public Result<String> add(@Valid @RequestBody SysConfig config) {
+    public ResultVO<String> add(@Valid @RequestBody SysConfigEntity config) {
         boolean success = sysConfigService.save(config);
-        return success ? Result.success("新增成功") : Result.error("新增失败");
+        return success ? ResultVO.success("新增成功") : ResultVO.error("新增失败");
     }
 
     /**
@@ -85,9 +85,9 @@ public class SysConfigController {
      */
     @PutMapping
     @Operation(summary = "修改配置", description = "修改系统配置项")
-    public Result<String> update(@Valid @RequestBody SysConfig config) {
+    public ResultVO<String> update(@Valid @RequestBody SysConfigEntity config) {
         boolean success = sysConfigService.updateById(config);
-        return success ? Result.success("更新成功") : Result.error("更新失败");
+        return success ? ResultVO.success("更新成功") : ResultVO.error("更新失败");
     }
 
     /**
@@ -95,8 +95,8 @@ public class SysConfigController {
      */
     @DeleteMapping("/{id}")
     @Operation(summary = "删除配置", description = "根据ID删除配置项")
-    public Result<String> delete(@PathVariable Long id) {
+    public ResultVO<String> delete(@PathVariable Long id) {
         boolean success = sysConfigService.removeById(id);
-        return success ? Result.success("删除成功") : Result.error("删除失败");
+        return success ? ResultVO.success("删除成功") : ResultVO.error("删除失败");
     }
 }

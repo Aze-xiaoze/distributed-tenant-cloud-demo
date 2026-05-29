@@ -1,15 +1,14 @@
 
 package com.tenant.system.controller;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.tenant.api.grpc.user.GetUserByIdRequest;
 import com.tenant.api.grpc.user.GetUserByUsernameRequest;
 import com.tenant.api.grpc.user.UserGrpcServiceGrpc;
 import com.tenant.api.grpc.user.UserResponse;
-import com.tenant.common.vo.Result;
+import com.tenant.common.vo.ResultVO;
 import com.tenant.core.security.TokenBlacklistService;
-import com.tenant.system.entity.SysUser;
+import com.tenant.system.entity.SysUserEntity;
 import com.tenant.system.service.SysUserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -51,11 +50,11 @@ public class SysUserController {
      * @return 分页结果
      */
     @GetMapping("/page")
-    public Result<Page<SysUser>> page(@RequestParam(defaultValue = "1") Long current,
-                                      @RequestParam(defaultValue = "10") Long size) {
-        Page<SysUser> page = new Page<>(current, size);
-        Page<SysUser> result = sysUserService.page(page);
-        return Result.success(result);
+    public ResultVO<Page<SysUserEntity>> page(@RequestParam(defaultValue = "1") Long current,
+                                              @RequestParam(defaultValue = "10") Long size) {
+        Page<SysUserEntity> page = new Page<>(current, size);
+        Page<SysUserEntity> result = sysUserService.page(page);
+        return ResultVO.success(result);
     }
 
     /**
@@ -66,15 +65,15 @@ public class SysUserController {
      * @return 用户信息
      */
     @GetMapping("/grpc/{id}")
-    public Result<Object> getGrpcById(@PathVariable Long id) {
+    public ResultVO<Object> getGrpcById(@PathVariable Long id) {
         GetUserByIdRequest request = GetUserByIdRequest.newBuilder()
                 .setUserId(id)
                 .build();
         UserResponse response = userGrpcStub.getUserById(request);
         if (response.getCode() == 200 && response.hasData()) {
-            return Result.success(response.getData());
+            return ResultVO.success(response.getData());
         }
-        return Result.error(response.getMessage());
+        return ResultVO.error(response.getMessage());
     }
 
     /**
@@ -86,16 +85,16 @@ public class SysUserController {
      * @return 用户信息
      */
     @GetMapping("/username/{username}")
-    public Result<Object> getByUsername(@PathVariable String username) {
+    public ResultVO<Object> getByUsername(@PathVariable String username) {
         // 通过gRPC调用tenant-auth服务获取用户信息
         GetUserByUsernameRequest request = GetUserByUsernameRequest.newBuilder()
                 .setUsername(username)
                 .build();
         UserResponse response = userGrpcStub.getUserByUsername(request);
         if (response.getCode() == 200 && response.hasData()) {
-            return Result.success(response.getData());
+            return ResultVO.success(response.getData());
         }
-        return Result.error(response.getMessage());
+        return ResultVO.error(response.getMessage());
     }
 
     /**
@@ -106,18 +105,18 @@ public class SysUserController {
      * @return 操作结果
      */
     @PutMapping("/{id}/status")
-    public Result<String> updateStatus(@PathVariable Long id, @RequestParam Integer status) {
+    public ResultVO<String> updateStatus(@PathVariable Long id, @RequestParam Integer status) {
         // 参数校验：状态值只能为0或1
         if (status != 0 && status != 1) {
-            return Result.error("状态值只能为0（禁用）或1（启用）");
+            return ResultVO.error("状态值只能为0（禁用）或1（启用）");
         }
-        SysUser user = new SysUser();
+        SysUserEntity user = new SysUserEntity();
         user.setId(id);
         user.setStatus(status);
         boolean success = sysUserService.updateById(user);
         // 禁用用户时，强制下线该用户的所有Token
         if (success && status == 0) {
-            SysUser existingUser = sysUserService.getById(id);
+            SysUserEntity existingUser = sysUserService.getById(id);
             if (existingUser != null) {
                 tokenBlacklistService.revokeAllUserTokens(
                         existingUser.getUsername(),
@@ -126,7 +125,7 @@ public class SysUserController {
                 );
             }
         }
-        return success ? Result.success("操作成功") : Result.error("操作失败");
+        return success ? ResultVO.success("操作成功") : ResultVO.error("操作失败");
     }
 
     /**
@@ -137,16 +136,16 @@ public class SysUserController {
      * @return 操作结果
      */
     @PostMapping("/{id}/force-logout")
-    public Result<String> forceLogout(@PathVariable Long id) {
-        SysUser user = sysUserService.getById(id);
+    public ResultVO<String> forceLogout(@PathVariable Long id) {
+        SysUserEntity user = sysUserService.getById(id);
         if (user == null) {
-            return Result.error("用户不存在");
+            return ResultVO.error("用户不存在");
         }
         tokenBlacklistService.revokeAllUserTokens(
                 user.getUsername(),
                 System.currentTimeMillis(),
                 jwtExpiration
         );
-        return Result.success("已强制下线用户：" + user.getUsername());
+        return ResultVO.success("已强制下线用户：" + user.getUsername());
     }
 }

@@ -1,6 +1,6 @@
 package com.tenant.common.exception;
 
-import com.tenant.common.vo.Result;
+import com.tenant.common.vo.ResultVO;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 
 /**
  * 全局异常处理器
- * 统一拦截系统中抛出的各类异常，转换为标准格式的错误响应（{@link Result}）
+ * 统一拦截系统中抛出的各类异常，转换为标准格式的错误响应（{@link ResultVO}）
  * <p>异常优先级（从具体到宽泛）：ConstraintViolationException → MethodArgumentNotValidException → IllegalArgumentException → BusinessException → RuntimeException → Exception
  * <p><b>重要</b>：@ExceptionHandler 按声明顺序匹配，必须将最具体的异常放在最前面，宽泛的异常放在最后兜底
  * <p>配合{@link BusinessException}使用，业务异常返回400，系统异常返回500
@@ -35,12 +35,12 @@ public class GlobalExceptionHandler {
      * @return 错误响应结果
      */
     @ExceptionHandler(ConstraintViolationException.class)
-    public Result<Object> handleConstraintViolationException(ConstraintViolationException e) {
+    public ResultVO<Object> handleConstraintViolationException(ConstraintViolationException e) {
         String errors = e.getConstraintViolations().stream()
                 .map(ConstraintViolation::getMessage)
                 .collect(Collectors.joining("; "));
         logger.warn("参数约束校验失败: {}", errors);
-        return Result.fail("参数校验失败: " + errors);
+        return ResultVO.fail("参数校验失败: " + errors);
     }
 
     /**
@@ -51,12 +51,12 @@ public class GlobalExceptionHandler {
      * @return 错误响应结果，包含所有字段校验错误
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public Result<Object> handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
+    public ResultVO<Object> handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
         String errors = e.getBindingResult().getFieldErrors().stream()
                 .map(FieldError::getDefaultMessage)
                 .collect(Collectors.joining("; "));
         logger.warn("参数校验失败: {}", errors);
-        return Result.fail("参数校验失败: " + errors);
+        return ResultVO.fail("参数校验失败: " + errors);
     }
 
     /**
@@ -66,9 +66,9 @@ public class GlobalExceptionHandler {
      * @return 错误响应结果
      */
     @ExceptionHandler(IllegalArgumentException.class)
-    public Result<Object> handleIllegalArgumentException(IllegalArgumentException e) {
+    public ResultVO<Object> handleIllegalArgumentException(IllegalArgumentException e) {
         logger.error("参数校验异常: {}", e.getMessage());
-        return Result.fail("参数错误: " + e.getMessage());
+        return ResultVO.fail("参数错误: " + e.getMessage());
     }
 
     /**
@@ -79,9 +79,9 @@ public class GlobalExceptionHandler {
      * @return 错误响应结果
      */
     @ExceptionHandler(BusinessException.class)
-    public Result<Object> handleBusinessException(BusinessException e) {
+    public ResultVO<Object> handleBusinessException(BusinessException e) {
         logger.error("业务异常: {}", e.getMessage());
-        return Result.error(e.getCode(), e.getMessage());
+        return ResultVO.error(e.getCode(), e.getMessage());
     }
 
     /**
@@ -91,9 +91,9 @@ public class GlobalExceptionHandler {
      * @return 错误响应结果
      */
     @ExceptionHandler(RuntimeException.class)
-    public Result<Object> handleRuntimeException(RuntimeException e) {
+    public ResultVO<Object> handleRuntimeException(RuntimeException e) {
         logger.error("运行时异常", e);
-        return Result.error(e.getMessage());
+        return ResultVO.error(e.getMessage());
     }
 
     /**
@@ -103,8 +103,8 @@ public class GlobalExceptionHandler {
      * @return 错误响应结果
      */
     @ExceptionHandler(Exception.class)
-    public Result<Object> handleException(Exception e) {
+    public ResultVO<Object> handleException(Exception e) {
         logger.error("系统内部异常", e);
-        return Result.error("系统内部错误，请联系管理员");
+        return ResultVO.error("系统内部错误，请联系管理员");
     }
 }

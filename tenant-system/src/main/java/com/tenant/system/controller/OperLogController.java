@@ -2,7 +2,7 @@ package com.tenant.system.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.tenant.common.vo.Result;
+import com.tenant.common.vo.ResultVO;
 import com.tenant.core.log.OperLogEntity;
 import com.tenant.system.service.OperLogService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -30,14 +30,14 @@ public class OperLogController {
      */
     @GetMapping("/page")
     @Operation(summary = "分页查询操作日志", description = "支持按操作人、租户ID、操作模块筛选")
-    public Result<IPage<OperLogEntity>> page(
+    public ResultVO<IPage<OperLogEntity>> page(
             @RequestParam(defaultValue = "1") Long current,
             @RequestParam(defaultValue = "10") Long size,
             @Parameter(description = "操作人") @RequestParam(required = false) String operator,
             @Parameter(description = "租户ID") @RequestParam(required = false) String tenantId,
             @Parameter(description = "操作模块") @RequestParam(required = false) String title) {
         Page<OperLogEntity> page = new Page<>(current, size);
-        return Result.success(operLogService.queryPage(page, operator, tenantId, title));
+        return ResultVO.success(operLogService.queryPage(page, operator, tenantId, title));
     }
 
     /**
@@ -45,9 +45,9 @@ public class OperLogController {
      */
     @GetMapping("/{id}")
     @Operation(summary = "操作日志详情", description = "根据ID获取操作日志详情")
-    public Result<OperLogEntity> getById(@PathVariable Long id) {
+    public ResultVO<OperLogEntity> getById(@PathVariable Long id) {
         OperLogEntity log = operLogService.getById(id);
-        return log != null ? Result.success(log) : Result.error("日志不存在");
+        return log != null ? ResultVO.success(log) : ResultVO.error("日志不存在");
     }
 
     /**
@@ -55,9 +55,9 @@ public class OperLogController {
      */
     @DeleteMapping("/{id}")
     @Operation(summary = "删除操作日志", description = "根据ID删除操作日志")
-    public Result<String> delete(@PathVariable Long id) {
+    public ResultVO<String> delete(@PathVariable Long id) {
         boolean success = operLogService.removeById(id);
-        return success ? Result.success("删除成功") : Result.error("删除失败");
+        return success ? ResultVO.success("删除成功") : ResultVO.error("删除失败");
     }
 
     /**
@@ -65,8 +65,8 @@ public class OperLogController {
      */
     @DeleteMapping("/batch")
     @Operation(summary = "批量删除操作日志", description = "根据ID列表批量删除操作日志")
-    public Result<String> deleteBatch(@RequestParam java.util.List<Long> ids) {
+    public ResultVO<String> deleteBatch(@RequestParam java.util.List<Long> ids) {
         boolean success = operLogService.removeByIds(ids);
-        return success ? Result.success("批量删除成功") : Result.error("批量删除失败");
+        return success ? ResultVO.success("批量删除成功") : ResultVO.error("批量删除失败");
     }
 }
